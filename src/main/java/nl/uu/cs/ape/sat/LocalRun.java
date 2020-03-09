@@ -16,7 +16,7 @@ public class LocalRun {
 
 	public static void main(String[] args) {
 
-		String path = "/home/vedran/ownCloud/PhD/All Use Cases/Evaluation/UseCase5_no1/";
+		String path = "./";
 		String fileName = "ape.configuration";
 		if (!APEUtils.isValidReadFile(path + fileName)) {
 			System.err.println("Bad path.");
@@ -52,7 +52,7 @@ public class LocalRun {
 			System.err.println("Error in synthesis execution. Writing to the file system failed.");
 			return;
 		}
-		
+
 		/*
 		 * Writing solutions to the specified file in human readable format
 		 */
