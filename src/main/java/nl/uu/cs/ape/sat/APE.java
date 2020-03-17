@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import nl.uu.cs.ape.sat.core.ExternalConstraintBuilder;
 import nl.uu.cs.ape.sat.core.ExternalConstraintFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -208,6 +209,10 @@ public class APE {
 		return solutions;
 	}
 
+	public void AddExternalConstraint(ExternalConstraintBuilder constraintBuilder) {
+		externalConstraintFactory.AddConstraintBuilder(constraintBuilder);
+	}
+
 	/**
 	 * Run the synthesis for the given workflow specification.
 	 *
@@ -239,7 +244,7 @@ public class APE {
 		while (allSolutions.getNumberOfSolutions() < allSolutions.getMaxNumberOfSolutions()
 			&& solutionLength <= config.getSolution_max_length()) {
 
-			SAT_SynthesisEngine implSATsynthesis = new SAT_SynthesisEngine(apeDomainSetup, allSolutions, config, solutionLength);
+			SAT_SynthesisEngine implSATsynthesis = new SAT_SynthesisEngine(apeDomainSetup, allSolutions, config, externalConstraintFactory, solutionLength);
 
 			APEUtils.printHeader(implSATsynthesis.getSolutionSize(), "Workflow discovery - length");
 
