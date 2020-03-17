@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package nl.uu.cs.ape.sat;
 
@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 
+import nl.uu.cs.ape.sat.core.ExternalConstraintFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -37,10 +38,11 @@ public class APE {
 	private final APEConfig config;
 	/** Object containing general APE encoding */
 	private APEDomainSetup apeDomainSetup;
+	private ExternalConstraintFactory externalConstraintFactory;
 
 	/**
 	 * Create instance of the APE solver.
-	 * 
+	 *
 	 * @param configPath - path to the APE configuration file. If the string is null
 	 *                   the default './ape.config' value is assumed.
 	 * @throws IOException   error in reading the configuration file
@@ -53,12 +55,15 @@ public class APE {
 		}
 		if (!setupDomain()) {
 			throw new IOException("Error in settin up the domain.");
+
 		}
+
+		this.externalConstraintFactory = new ExternalConstraintFactory(apeDomainSetup);
 	}
 
 	/**
 	 * Create instance of the APE solver.
-	 * 
+	 *
 	 * @param configPath - the APE configuration JSONObject{@link JSONObject}.
 	 * @throws ExceptionInInitializerError
 	 * @throws IOException
@@ -71,15 +76,22 @@ public class APE {
 		}
 		if (!setupDomain()) {
 			throw new IOException("Error in settin up the domain.");
+
 		}
+
+		this.externalConstraintFactory = new ExternalConstraintFactory(apeDomainSetup);
 	}
 
 	/**
-	 * Method used to setup the domain using the configuration file and the
-	 * corresponding annotation and constraints files.
-	 * 
-	 * @return {@code true} if the setup was successfully performed, {@code false}
+	 * Method used to setup the domain using the configuration file and the corresponding annotation and constraints files.
+	 @return {@code true} if the setup was successfully performed, {@code false} otherwise.
+	 /**
+	  * Method used to setup the domain using the configuration file and the
+	  * corresponding annotation and constraints files.
+	  *
+	  * @return {@code true} if the setup was successfully performed, {@code false}
 	 *         otherwise.
+	>>>> Initialize External Constraint Factory correctly
 	 * @throws ExceptionInInitializerError
 	 */
 	private boolean setupDomain() throws ExceptionInInitializerError {
@@ -102,7 +114,9 @@ public class APE {
 		/*
 		 * Update allModules and allTypes sets based on the module.json file
 		 */
+
 		succRun &= APEUtils.readModuleJson(config.getToolAnnotationsPath(), apeDomainSetup);
+
 
 		succRun &= apeDomainSetup.trimTaxonomy();
 
@@ -114,9 +128,10 @@ public class APE {
 		return succRun;
 	}
 
+
 	/**
 	 * Method that return all the supported constraint templates.
-	 * 
+	 *
 	 * @return list of {@link ConstraintTemplate} objects.
 	 */
 	public Collection<ConstraintTemplate> getConstraintTemplates() {
@@ -125,17 +140,18 @@ public class APE {
 
 	/**
 	 * The method returns the configuration file of the APE instance.
-	 * 
+	 *
 	 * @return the field {@link config}.
 	 */
 	public APEConfig getConfig() {
 		return config;
 	}
 
+
 	/**
 	 * Get the object that contains all crucial information about the domain (e.g.
 	 * list of tools, data types, constraint factory, etc.)
-	 * 
+	 *
 	 * @return
 	 */
 	public APEDomainSetup getDomainSetup() {
@@ -145,7 +161,7 @@ public class APE {
 	/**
 	 * Function used to return all the elements of one data type dimension (e.g. all
 	 * data types or all data formats).
-	 * 
+	 *
 	 * @param dimensionRootID - root of the data taxonomy subtree that corresponds
 	 *                        to the list of elements that should be returned.
 	 * @return List where each element correspond to a map that can be transformed
@@ -173,15 +189,16 @@ public class APE {
 		return transformedTypes;
 	}
 
+
 	/**
 	 * Setup a new run instance of the APE solver and run the synthesis algorithm.
-	 * 
+	 *
 	 * @param configObject - JSON object that contains run configurations
 	 * @return The list of all the solutions.
 	 * @throws JSONException
 	 */
 	public SATsolutionsList runSynthesis(JSONObject configObject, APEDomainSetup apeDomainSetup)
-			throws IOException, JSONException {
+		throws IOException, JSONException {
 		apeDomainSetup.clearConstraints();
 		config.setupRunConfiguration(configObject, apeDomainSetup);
 		if (config == null || config.getRunConfigJsonObj() == null) {
@@ -192,15 +209,16 @@ public class APE {
 		return solutions;
 	}
 
+
 	/**
 	 * Setup a new run instance of the APE solver and run the synthesis algorithm.
-	 * 
+	 *
 	 * @param configPath - path to the JSON that contains run configurations
 	 * @return The list of all the solutions.
 	 * @throws JSONException
 	 */
 	public SATsolutionsList runSynthesis(String configPath, APEDomainSetup apeDomainSetup)
-			throws IOException, JSONException {
+		throws IOException, JSONException {
 		config.setupRunConfiguration(configPath, apeDomainSetup);
 		if (config == null || config.getRunConfigJsonObj() == null) {
 			throw new JSONException("Run configuration failed. Error in configuration file.");
@@ -212,7 +230,7 @@ public class APE {
 
 	/**
 	 * Run the synthesis for the given workflow specification.
-	 * 
+	 *
 	 * @return The list of all the solutions.
 	 * @throws IOException error in case of not providing a proper configuration
 	 *                     file.
@@ -223,8 +241,11 @@ public class APE {
 		 */
 		SATsolutionsList allSolutions = new SATsolutionsList(config);
 
+		externalConstraintFactory.AddAtomDictionary(allSolutions.getAtomDictionary());
 		APEUtils.readConstraints(config.getConstraintsPath(), apeDomainSetup);
 
+
+		// APE EXTENSION
 		/** Print the setup information when necessary. */
 		APEUtils.debugPrintout(config.getDebugMode(), apeDomainSetup);
 
@@ -236,10 +257,10 @@ public class APE {
 		APEUtils.timerStart(globalTimerID, true);
 		int solutionLength = config.getSolutionMinLength();
 		while (allSolutions.getNumberOfSolutions() < allSolutions.getMaxNumberOfSolutions()
-				&& solutionLength <= config.getSolutionMaxLength()) {
+			&& solutionLength <= config.getSolutionMaxLength()) {
 
-			SAT_SynthesisEngine implSATsynthesis = new SAT_SynthesisEngine(apeDomainSetup, allSolutions, config,
-					solutionLength);
+
+			SAT_SynthesisEngine implSATsynthesis = new SAT_SynthesisEngine(apeDomainSetup, allSolutions, config, externalConstraintFactory, solutionLength);
 
 			APEUtils.printHeader(implSATsynthesis.getSolutionSize(), "Workflow discovery - length");
 
@@ -252,7 +273,9 @@ public class APE {
 			implSATsynthesis.synthesisExecution();
 
 			if ((allSolutions.getNumberOfSolutions() >= allSolutions.getMaxNumberOfSolutions() - 1)
-					|| solutionLength == config.getSolutionMaxLength()) {
+
+				|| solutionLength == config.getSolutionMaxLength()) {
+
 				APEUtils.timerPrintSolutions(globalTimerID, allSolutions.getNumberOfSolutions());
 			}
 
@@ -265,7 +288,6 @@ public class APE {
 
 	/**
 	 * Write textual "human readable" version on workflow solutions to a file.
-	 * 
 	 * @param allSolutions
 	 * @param allSolutions
 	 * @return {@code true} if the writing was successfully performed, {@code false}
@@ -277,7 +299,7 @@ public class APE {
 
 		for (int i = 0; i < allSolutions.size(); i++) {
 			solutions2write = solutions2write.append(allSolutions.get(i).getNativeSATsolution().getRelevantSolution())
-					.append("\n");
+				.append("\n");
 		}
 		APEUtils.write2file(solutions2write.toString(), new File(config.getSolutionPath()), false);
 
@@ -286,7 +308,7 @@ public class APE {
 
 	/**
 	 * Generating scripts that represent executable versions of the workflow solutions and executing them.
-	 * 
+	 *
 	 * @param allSolutions
 	 * @param allModules
 	 * @return {@code true} if the execution was successfully performed,
@@ -303,8 +325,8 @@ public class APE {
 		APEUtils.timerStart("executingWorkflows", true);
 
 		Arrays.stream(
-				new File(executionsFolder).listFiles((dir, name) -> name.toLowerCase().startsWith("workflowSolution_")))
-				.forEach(File::delete);
+			new File(executionsFolder).listFiles((dir, name) -> name.toLowerCase().startsWith("workflowSolution_")))
+			.forEach(File::delete);
 		System.out.print("Loading");
 
 		/* Creating the requested scripts in parallel. */
@@ -328,7 +350,7 @@ public class APE {
 	 * Generate the graphical representations of the workflow solutions and write
 	 * them to the file system. Each graph is shown in data-flow representation,
 	 * i.e. transformation of data is in focus.
-	 * 
+	 *
 	 * @param allSolutions
 	 * @param orientation  - orientation in which the graph will be presented
 	 * @return {@code true} if the generating was successfully performed,
@@ -346,7 +368,7 @@ public class APE {
 		System.out.println();
 		/* Removing the existing files from the file system. */
 		Arrays.stream(new File(graphsFolder).listFiles((dir, name) -> name.toLowerCase().startsWith("SolutionNo")))
-				.forEach(File::delete);
+			.forEach(File::delete);
 		System.out.print("Loading");
 		/* Creating the requested graphs in parallel. */
 		allSolutions.getParallelStream().filter(solution -> solution.getIndex() < noGraphs).forEach(solution -> {
@@ -361,6 +383,7 @@ public class APE {
 			}
 		});
 
+
 		APEUtils.timerPrintText("drawingGraphs", "\nGraphical files have been generated.");
 
 		return true;
@@ -370,14 +393,15 @@ public class APE {
 	 * Generate the graphical representations of the workflow solutions and write
 	 * them to the file system. Each graph is shown in control-flow representation,
 	 * i.e. order of the operations is in focus.
-	 * 
+	 *
 	 * @param allSolutions
 	 * @param orientation  - orientation in which the graph will be presented
 	 * @return {@code true} if the generating was successfully performed,
 	 *         {@code false} otherwise.
 	 * @throws IOException
 	 */
-	public boolean writeControlFlowGraphs(SATsolutionsList allSolutions, RankDir orientation) throws IOException {
+	public boolean writeControlFlowGraphs(SATsolutionsList allSolutions, RankDir orientation) throws
+		IOException {
 		String graphsFolder = config.getSolutionGraphsFolder();
 		Integer noGraphs = config.getNoGraphs();
 		if (graphsFolder == null || noGraphs == null || noGraphs == 0 || allSolutions.isEmpty()) {
@@ -387,15 +411,19 @@ public class APE {
 		APEUtils.timerStart("drawingGraphs", true);
 		System.out.println();
 		/* Removing the existing files from the file system. */
+
 		Arrays.stream(new File(graphsFolder).listFiles((dir, name) -> name.toLowerCase().startsWith("SolutionNo")))
-				.forEach(File::delete);
+			.forEach(File::delete);
+
 		System.out.print("Loading");
 		/* Creating the requested graphs in parallel. */
 		allSolutions.getParallelStream().filter(solution -> solution.getIndex() < noGraphs).forEach(solution -> {
 			try {
 				String title = "SolutionNo_" + solution.getIndex() + "_length_" + solution.getSolutionlength();
 				String path = graphsFolder + "/" + title;
+
 				solution.getControlflowGraph(title, orientation).getWrite2File(new File(path));
+
 				System.out.print(".");
 			} catch (IOException e) {
 				System.err.println("Error occured while writing a graph to the file system.");

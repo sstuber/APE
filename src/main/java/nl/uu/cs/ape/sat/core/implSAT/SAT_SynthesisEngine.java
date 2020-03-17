@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import nl.uu.cs.ape.sat.core.ExternalConstraintFactory;
 import org.apache.commons.io.IOUtils;
 import org.sat4j.core.VecInt;
 import org.sat4j.minisat.SolverFactory;
@@ -38,25 +39,38 @@ import nl.uu.cs.ape.sat.utils.APEUtils;
  * using MiniSAT solver. <br>
  * <br>
  * The class implements general synthesis interface {@link SynthesisEngine}.
- * 
- * @author Vedran Kasalica
  *
+ * @author Vedran Kasalica
  */
 public class SAT_SynthesisEngine implements SynthesisEngine {
 
-	/** Object that contains all the domain information. */
+	/**
+	 * Object that contains all the domain information.
+	 */
 	private final APEDomainSetup domainSetup;
-	/** APE library configuration object. */
+	/**
+	 * APE library configuration object.
+	 */
 	private final APEConfig config;
-	/** Mapping of all the predicates to integers. */
+	/**
+	 * Mapping of all the predicates to integers.
+	 */
 	private final AtomMappings mappings;
-	/** Set of all the solutions found by the library. */
+	/**
+	 * Set of all the solutions found by the library.
+	 */
 	private final SATsolutionsList allSolutions;
-	/** CNF encoding of the problem. */
+	/**
+	 * CNF encoding of the problem.
+	 */
 	private StringBuilder cnfEncoding;
-	/** String used as an input for the SAT solver. */
+	/**
+	 * String used as an input for the SAT solver.
+	 */
 	private InputStream temp_sat_input;
-	/** Configuration of the program. */
+	/**
+	 * Configuration of the program.
+	 */
 	/*
 	 * Representation of the tool part of the automaton used to encode the structure
 	 * of the solution.
@@ -68,15 +82,17 @@ public class SAT_SynthesisEngine implements SynthesisEngine {
 	 */
 	private TypeAutomaton typeAutomaton;
 
+	private ExternalConstraintFactory externalConstraintFactory;
+
 	/**
 	 * Setup of an instance of the SAT synthesis engine.
-	 * 
+	 *
 	 * @param domainSetup
 	 * @param allSolutions
 	 * @param config
 	 */
 	public SAT_SynthesisEngine(APEDomainSetup domainSetup, SATsolutionsList allSolutions,
-			APEConfig config, int size) {
+							   APEConfig config, ExternalConstraintFactory externalConstraintFactory, int size) {
 		this.domainSetup = domainSetup;
 		this.allSolutions = allSolutions;
 		this.config = config;
@@ -87,13 +103,14 @@ public class SAT_SynthesisEngine implements SynthesisEngine {
 
 		moduleAutomaton = new ModuleAutomaton(size, config.getMaxNoToolOutputs());
 		typeAutomaton = new TypeAutomaton(size, config.getMaxNoToolInputs(), config.getMaxNoToolOutputs());
-
+		this.externalConstraintFactory = externalConstraintFactory;
+		this.externalConstraintFactory.ResetStates(typeAutomaton, moduleAutomaton);
 	}
 
 	/**
 	 * Generate the SAT encoding of the workflow synthesis and return it as a
 	 * string.
-	 * 
+	 *
 	 * @return {@code true} if the encoding was performed successfully, {@code false} otherwise.
 	 * @throws IOException
 	 */
@@ -103,6 +120,7 @@ public class SAT_SynthesisEngine implements SynthesisEngine {
 		TaxonomyPredicate rootModule = domainSetup.getAllModules().getRootPredicates().get(0);
 
 		if(rootModule == null) {
+
 			System.err.println("Taxonomies have not been setup properly.");
 			return false;
 		}
@@ -126,36 +144,38 @@ public class SAT_SynthesisEngine implements SynthesisEngine {
 		 */
 		cnfEncoding = cnfEncoding.append(SATModuleUtils.encodeMemoryStructure(this));
 		APEUtils.timerRestartAndPrint(currLengthTimer, "Memory structure encoding");
-		
+
 		/*
-		 * Create the constraints enforcing: 
-		 * 1. Mutual exclusion of the tools 
-		 * 2. Mandatory usage of the tools - from taxonomy. 
+		 * Create the constraints enforcing:
+		 * 1. Mutual exclusion of the tools
+		 * 2. Mandatory usage of the tools - from taxonomy.
 		 * 3. Adding the constraints enforcing the taxonomy structure.
 		 */
-		cnfEncoding = cnfEncoding.append(SATModuleUtils.moduleMutualExclusion(domainSetup.getAllModules(),moduleAutomaton, mappings));
+		cnfEncoding = cnfEncoding.append(SATModuleUtils.moduleMutualExclusion(domainSetup.getAllModules(), moduleAutomaton, mappings));
 		APEUtils.timerRestartAndPrint(currLengthTimer, "Tool exclusions encoding");
 		cnfEncoding = cnfEncoding.append(SATModuleUtils.moduleMandatoryUsage(domainSetup.getAllModules(), moduleAutomaton, mappings));
 		cnfEncoding = cnfEncoding.append(
-				SATModuleUtils.moduleEnforceTaxonomyStructure(domainSetup.getAllModules(), rootModule, moduleAutomaton, mappings));
+			SATModuleUtils.moduleEnforceTaxonomyStructure(domainSetup.getAllModules(), rootModule, moduleAutomaton, mappings));
 		APEUtils.timerRestartAndPrint(currLengthTimer, "Tool usage encoding");
 		/*
-		 * Create the constraints enforcing: 
-		 * 1. Mutual exclusion of the types/formats 
-		 * 2. Mandatory usage of the types in the transition nodes (note: "empty type" is considered a type) 
+		 * Create the constraints enforcing:
+		 * 1. Mutual exclusion of the types/formats
+		 * 2. Mandatory usage of the types in the transition nodes (note: "empty type" is considered a type)
 		 * 3. Adding the constraints enforcing the taxonomy structure.
 		 */
 		cnfEncoding = cnfEncoding.append(SATTypeUtils.typeMutualExclusion(domainSetup.getAllTypes(), typeAutomaton, mappings));
 		APEUtils.timerRestartAndPrint(currLengthTimer, "Type exclusions encoding");
+
 		cnfEncoding = cnfEncoding.append(SATTypeUtils.typeMandatoryUsage(domainSetup, typeAutomaton, mappings));
 		cnfEncoding = cnfEncoding.append(SATTypeUtils.typeEnforceTaxonomyStructure(domainSetup.getAllTypes(), typeAutomaton, mappings));
+
 		APEUtils.timerRestartAndPrint(currLengthTimer, "Type usage encoding");
 		/*
 		 * Encode the constraints from the file based on the templates (manual templates)
 		 */
 		if (domainSetup.getUnformattedConstr() != null && !domainSetup.getUnformattedConstr().isEmpty()) {
 			cnfEncoding = cnfEncoding
-					.append(APEUtils.encodeAPEConstraints(domainSetup, mappings, moduleAutomaton, typeAutomaton));
+				.append(APEUtils.encodeAPEConstraints(domainSetup, mappings, moduleAutomaton, typeAutomaton));
 			APEUtils.timerRestartAndPrint(currLengthTimer, "SLTL constraints");
 		}
 		/*
@@ -181,9 +201,9 @@ public class SAT_SynthesisEngine implements SynthesisEngine {
 		 * Setup the constraints ensuring that the auxiliary predicates are properly used and linked to the underlying taxonomy predicates.
 		 */
 		cnfEncoding = cnfEncoding.append(domainSetup.getConstraintsForAuxiliaryPredicates(mappings, moduleAutomaton, typeAutomaton));
-		
+
 		/*
-		 * Counting the number of variables and clauses that will be given to the SAT solver 
+		 * Counting the number of variables and clauses that will be given to the SAT solver
 		 * TODO Improve this approach, no need to read the whole String again to cound lines.
 		 */
 		int variables = mappings.getSize();
@@ -191,10 +211,10 @@ public class SAT_SynthesisEngine implements SynthesisEngine {
 		StringBuilder sat_input_header = new StringBuilder("p cnf " + variables + " " + clauses + "\n");
 		APEUtils.timerRestartAndPrint(currLengthTimer, "Reading rows");
 		System.out.println();
-		
+
 		StringBuilder mknfEncoding = sat_input_header.append(cnfEncoding);
 //		APEUtils.write2file(mknfEncoding.toString(), new File("/home/vedran/Desktop/tmp"+ problemSetupStartTime), false);
-		
+
 
 		temp_sat_input = IOUtils.toInputStream(mknfEncoding.toString(), "UTF-8");
 		temp_sat_input.close();
@@ -210,12 +230,12 @@ public class SAT_SynthesisEngine implements SynthesisEngine {
 
 		return true;
 	}
-	
+
 
 	/**
 	 * Using the SAT input generated from SAT encoding and running MiniSAT solver to
 	 * find the solutions
-	 * 
+	 *
 	 * @param allSolutions - current set of {@link SAT_solution} that will be
 	 *                     extended with newly found solutions, it
 	 * @return {@code true} if the synthesis execution results in new candidate solutions, otherwise {@code false}.
@@ -223,7 +243,7 @@ public class SAT_SynthesisEngine implements SynthesisEngine {
 	public boolean synthesisExecution() {
 
 		List<SolutionWorkflow> currSolutions = runMiniSAT(temp_sat_input,
-				allSolutions.getNumberOfSolutions(), allSolutions.getMaxNumberOfSolutions());
+			allSolutions.getNumberOfSolutions(), allSolutions.getMaxNumberOfSolutions());
 		/* Add current solutions to list of all solutions. */
 		return allSolutions.addSolutions(currSolutions);
 	}
@@ -235,8 +255,8 @@ public class SAT_SynthesisEngine implements SynthesisEngine {
 	/**
 	 * Returns a set of {@link SAT_solution SAT_solutions} by parsing the SAT
 	 * output. In case of the UNSAT the list is empty.
-	 * 
-	 * @param sat_input   		- CNF formula in dimacs form
+	 *
+	 * @param sat_input         - CNF formula in dimacs form
 	 * @param mappings          - atom mappings
 	 * @param solutionsFoundMax
 	 * @return List of {@link SAT_solution SAT_solutions}. Possibly empty list.
@@ -246,13 +266,13 @@ public class SAT_SynthesisEngine implements SynthesisEngine {
 		ISolver solver = SolverFactory.newDefault();
 		int timeout = 3600;
 		// 1 hour timeout
-		solver.setTimeout(timeout); 
+		solver.setTimeout(timeout);
 		long realStartTime = 0;
 		long realTimeElapsedMillis;
 		Reader reader = new DimacsReader(solver);
 		try {
 			// loading CNF encoding of the problem
-			IProblem problem = reader.parseInstance(sat_input); 
+			IProblem problem = reader.parseInstance(sat_input);
 			realStartTime = System.currentTimeMillis();
 			while (solutionsFound < solutionsFoundMax && problem.isSatisfiable()) {
 				SolutionWorkflow sat_solution = new SolutionWorkflow(problem.model(), this);
@@ -261,7 +281,8 @@ public class SAT_SynthesisEngine implements SynthesisEngine {
 				if (solutionsFound % 500 == 0) {
 					realTimeElapsedMillis = System.currentTimeMillis() - realStartTime;
 					System.out.println("Found in total " + solutionsFound + " solutions. Solving time: "
-							+ (realTimeElapsedMillis / 1000F) + " sec.");
+						+ (realTimeElapsedMillis / 1000F) + " sec.");
+
 				}
 				/*
 				 * Adding the negation of the positive part of the solution as a constraint
@@ -274,7 +295,7 @@ public class SAT_SynthesisEngine implements SynthesisEngine {
 		} catch (ParseFormatException e) {
 			System.out.println("Error while parsing the cnf encoding of the problem by the MiniSAT solver.");
 		} catch (ContradictionException e) {
-			if(solutionsFound == 0) {
+			if (solutionsFound == 0) {
 				System.err.println("Unsatisfiable");
 			}
 		} catch (TimeoutException e) {
@@ -286,7 +307,7 @@ public class SAT_SynthesisEngine implements SynthesisEngine {
 		if (solutionsFound == 0 || solutionsFound % 500 != 0) {
 			realTimeElapsedMillis = System.currentTimeMillis() - realStartTime;
 			System.out.println("Found " + solutionsFound + " solutions. Solving time: "
-					+ (realTimeElapsedMillis / 1000F) + " sec.");
+				+ (realTimeElapsedMillis / 1000F) + " sec.");
 		}
 
 		return solutions;
@@ -296,7 +317,7 @@ public class SAT_SynthesisEngine implements SynthesisEngine {
 	public APEConfig getConfig() {
 		return config;
 	}
-	
+
 	public APEDomainSetup getDomainSetup() {
 		return domainSetup;
 	}
@@ -316,9 +337,10 @@ public class SAT_SynthesisEngine implements SynthesisEngine {
 	public TypeAutomaton getTypeAutomaton() {
 		return typeAutomaton;
 	}
-	
-	/** 
+
+	/**
 	 * Return the {@link Type} object that represents the empty type, i.e. absence of types.
+	 *
 	 * @return
 	 */
 	public Type getEmptyType() {
@@ -327,7 +349,7 @@ public class SAT_SynthesisEngine implements SynthesisEngine {
 
 	/**
 	 * Get size of the solution that is being synthesized.
-	 * 
+	 *
 	 * @return Length of the solution.
 	 */
 	public int getSolutionSize() {
