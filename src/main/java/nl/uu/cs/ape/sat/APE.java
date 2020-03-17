@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package nl.uu.cs.ape.sat;
 
@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import nl.uu.cs.ape.sat.core.ExternalConstraintFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -52,9 +53,10 @@ public class APE {
 	private final APEConfig config;
 	/** Object containing general APE encoding */
 	private APEDomainSetup apeDomainSetup;
-	
-	
-	
+
+	private ExternalConstraintFactory externalConstraintFactory;
+
+
 	/**
 	 * Create instance of the APE solver.
 	 * @param configPath - path to the APE configuration file. If the string is null the default './ape.config' value is assumed.
@@ -67,27 +69,32 @@ public class APE {
 			System.err.println("Configuration failed. Error in configuration file.");
 			throw new ExceptionInInitializerError();
 		}
-		if(!setupDomain()) {
+
+		if (!setupDomain()) {
 			System.err.println("Error in settin up the domain.");
 		}
+
+		this.externalConstraintFactory = new ExternalConstraintFactory(apeDomainSetup);
 	}
-	
+
 	/**
 	 * Create instance of the APE solver.
 	 * @param configPath - the APE configuration JSONObject{@link JSONObject}.
-	 * @throws ExceptionInInitializerError 
+	 * @throws ExceptionInInitializerError
 	 */
-	public APE(JSONObject configObject) throws ExceptionInInitializerError{
+	public APE(JSONObject configObject) throws ExceptionInInitializerError {
 		config = new APEConfig(configObject);
 		if (config == null) {
 			System.err.println("Configuration failed. Error in configuration object.");
 			throw new ExceptionInInitializerError();
 		}
-		if(!setupDomain()) {
+		if (!setupDomain()) {
 			System.err.println("Error in settin up the domain.");
 		}
+
+		this.externalConstraintFactory = new ExternalConstraintFactory(apeDomainSetup);
 	}
-	
+
 	/**
 	 * Method that return all the supported constraint templates.
 	 * @return list of {@link ConstraintTemplate} objects.
@@ -95,23 +102,23 @@ public class APE {
 	public Collection<ConstraintTemplate> getConstraintTemplates() {
 		return apeDomainSetup.getConstraintFactory().getConstraintTamplates();
 	}
-	
-	
-	/** 
+
+
+	/**
 	 * The method returns the configuration file of the APE instance.
 	 * @return the field {@link config}. */
 	public APEConfig getConfig() {
 		return config;
 	}
-	
+
 	public APEDomainSetup getDomainSetup() {
 		return apeDomainSetup;
 	}
-	
+
 	/**
 	 * Method used to setup the domain using the configuration file and the corresponding annotation and constraints files.
 	 * @return {@code true} if the setup was successfully performed, {@code false} otherwise.
-	 * @throws ExceptionInInitializerError 
+	 * @throws ExceptionInInitializerError
 	 */
 	public boolean setupDomain() throws ExceptionInInitializerError {
 		/** Variable that describes a successful run of the program. */
@@ -140,17 +147,17 @@ public class APE {
 		 * Update allModules and allTypes sets based on the module.json file
 		 */
 		APEUtils.readModuleJson(config.getTool_annotations_path(), apeDomainSetup);
-		
+
 		succRun &= apeDomainSetup.trimTaxonomy();
-		
+
 		/*
 		 * Define set of all constraint formats
 		 */
 		apeDomainSetup.initializeConstraints();
-		
+
 		return succRun;
 	}
-	
+
 	/**
 	 * Function used to return all the elements of one data type dimension (e.g. all data types or all data formats).
 	 * @param dimensionRootID - root of the data taxonomy subtree that corresponds to the list of elements that should be returned.
@@ -158,19 +165,19 @@ public class APE {
 	 */
 	public List<Map<String, String>> getTaxonomyElements(String dimensionRootID) {
 		List<? extends TaxonomyPredicate> types = apeDomainSetup.getAllTypes().getElementsFromSubTaxonomy(apeDomainSetup.getAllTypes().get(dimensionRootID));
-		if(types == null) {
+		if (types == null) {
 			types = apeDomainSetup.getAllModules().getElementsFromSubTaxonomy(apeDomainSetup.getAllModules().get(dimensionRootID));
 		}
 		List<Map<String, String>> transformedTypes = new ArrayList<Map<String, String>>();
-		for(TaxonomyPredicate currType : types) {
+		for (TaxonomyPredicate currType : types) {
 			transformedTypes.add(currType.toMap());
 		}
-		
+
 		return transformedTypes;
 	}
-	
+
 	/** Setup a new run instance of the APE solver and run the synthesis algorithm.
-	 * 
+	 *
 	 * @param configObject - JSON object that contains run configurations
 	 * @return The list of all the solutions.
 	 * @throws JSONException
@@ -181,12 +188,12 @@ public class APE {
 			throw new JSONException("Run configuration failed. Error in configuration object.");
 		}
 		SATsolutionsList solutions = executeSynthesis();
-		
+
 		return solutions;
 	}
-	
+
 	/** Setup a new run instance of the APE solver and run the synthesis algorithm.
-	 * 
+	 *
 	 * @param configPath - path to the JSON that contains run configurations
 	 * @return The list of all the solutions.
 	 * @throws JSONException
@@ -197,12 +204,13 @@ public class APE {
 			throw new JSONException("Run configuration failed. Error in configuration file.");
 		}
 		SATsolutionsList solutions = executeSynthesis();
-		
+
 		return solutions;
 	}
+
 	/**
 	 * Run the synthesis for the given workflow specification.
-	 * 
+	 *
 	 * @return The list of all the solutions.
 	 * @throws IOException error in case of not providing a proper configuration file.
 	 */
@@ -212,9 +220,12 @@ public class APE {
 		 */
 		SATsolutionsList allSolutions = new SATsolutionsList(config);
 
-		
+		// APE EXTENSION
+		externalConstraintFactory.AddAtomDictionary(allSolutions.getAtomDictionary());
+
+
 		APEUtils.readConstraints(config.getConstraints_path(), apeDomainSetup);
-		
+
 		/** Print the setup information when necessary. */
 		APEUtils.debugPrintout(config.getDebug_mode(), apeDomainSetup);
 
@@ -226,7 +237,7 @@ public class APE {
 		APEUtils.timerStart(globalTimerID, true);
 		int solutionLength = config.getSolution_min_length();
 		while (allSolutions.getNumberOfSolutions() < allSolutions.getMaxNumberOfSolutions()
-				&& solutionLength <= config.getSolution_max_length()) {
+			&& solutionLength <= config.getSolution_max_length()) {
 
 			SAT_SynthesisEngine implSATsynthesis = new SAT_SynthesisEngine(apeDomainSetup, allSolutions, config, solutionLength);
 
@@ -241,7 +252,7 @@ public class APE {
 			implSATsynthesis.synthesisExecution();
 
 			if ((allSolutions.getNumberOfSolutions() >= allSolutions.getMaxNumberOfSolutions() - 1)
-					|| solutionLength == config.getSolution_max_length()) {
+				|| solutionLength == config.getSolution_max_length()) {
 				APEUtils.timerPrintSolutions(globalTimerID, allSolutions.getNumberOfSolutions());
 			}
 
@@ -249,13 +260,13 @@ public class APE {
 			solutionLength++;
 		}
 
-		
+
 		return allSolutions;
 	}
-	
+
 	/**
 	 * Write textual "human readable" version on workflow solutions to a file.
-	 * @param allSolutions 
+	 * @param allSolutions
 	 * @param allSolutions
 	 * @return {@code true} if the writing was successfully performed, {@code false} otherwise.
 	 */
@@ -264,7 +275,7 @@ public class APE {
 
 		for (int i = 0; i < allSolutions.size(); i++) {
 			solutions2write = solutions2write.append(allSolutions.get(i).getnativeSATsolution().getRelevantSolution())
-					.append("\n");
+				.append("\n");
 		}
 		return APEUtils.write2file(solutions2write.toString(), new File(config.getSolution_path()), false);
 	}
@@ -287,13 +298,13 @@ public class APE {
 		APEUtils.timerStart("executingWorkflows", true);
 
 		Arrays.stream(
-				new File(executionsFolder).listFiles((dir, name) -> name.toLowerCase().startsWith("workflowSolution_")))
-				.forEach(File::delete);
+			new File(executionsFolder).listFiles((dir, name) -> name.toLowerCase().startsWith("workflowSolution_")))
+			.forEach(File::delete);
 		System.out.print("Loading");
 		for (int i = 0; i < noExecutions && i < allSolutions.size(); i++) {
 
 			PrintWriter out = new PrintWriter(
-					new BufferedWriter(new FileWriter(executionsFolder + "/workflowSolution_" + i + ".sh", false)));
+				new BufferedWriter(new FileWriter(executionsFolder + "/workflowSolution_" + i + ".sh", false)));
 			out.println("");
 			out.close();
 			SAT_solution currSol = allSolutions.get(i).getnativeSATsolution();
@@ -301,7 +312,7 @@ public class APE {
 			for (Module curr : currSol.getRelevantSolutionModules(apeDomainSetup.getAllModules())) {
 				if (curr.getModuleExecution() != null) {
 					curr.getModuleExecution()
-							.run(config.getExecution_scripts_folder() + "/workflowSolution_" + i + ".sh");
+						.run(config.getExecution_scripts_folder() + "/workflowSolution_" + i + ".sh");
 				}
 			}
 			System.out.print(".");
@@ -331,29 +342,29 @@ public class APE {
 		System.out.println();
 		/* Removing the existing files from the file system. */
 		Arrays.stream(
-				new File(graphsFolder).listFiles((dir, name) -> name.toLowerCase().startsWith("SolutionNo")))
-				.forEach(File::delete);
+			new File(graphsFolder).listFiles((dir, name) -> name.toLowerCase().startsWith("SolutionNo")))
+			.forEach(File::delete);
 		System.out.print("Loading");
 		/* Creating the requested graphs in parallel. */
 		allSolutions.getParallelStream().filter(solution -> solution.getIndex() < noGraphs)
-										.forEach(solution -> {
-			try {
-				String title = "SolutionNo_" + solution.getIndex() + "_length_" + solution.getSolutionlength();
-				String path = graphsFolder + "/" + title;
-				solution.getDataflowGraph(title, orientation)
+			.forEach(solution -> {
+				try {
+					String title = "SolutionNo_" + solution.getIndex() + "_length_" + solution.getSolutionlength();
+					String path = graphsFolder + "/" + title;
+					solution.getDataflowGraph(title, orientation)
 						.getWrite2File(new File(path));
-				System.out.print(".");
-			} catch (IOException e) {
-				System.err.println("Error occured while writing a graph to the file system.");
-				e.printStackTrace();
-			}
-		});
-		
+					System.out.print(".");
+				} catch (IOException e) {
+					System.err.println("Error occured while writing a graph to the file system.");
+					e.printStackTrace();
+				}
+			});
+
 		APEUtils.timerPrintText("drawingGraphs", "\nGraphical files have been generated.");
 
 		return true;
 	}
-	
+
 	/**
 	 * Generate the graphical representations of the workflow solutions and write them to the file system. Each graph is shown in control-flow representation, i.e. order of the operations is in focus.
 	 * @param allSolutions
@@ -372,8 +383,8 @@ public class APE {
 		System.out.println();
 		/* Removing the existing files from the file system. */
 		Arrays.stream(
-				new File(graphsFolder).listFiles((dir, name) -> name.toLowerCase().startsWith("SolutionNo")))
-				.forEach(File::delete);
+			new File(graphsFolder).listFiles((dir, name) -> name.toLowerCase().startsWith("SolutionNo")))
+			.forEach(File::delete);
 		System.out.print("Loading");
 		/* Creating the requested graphs in parallel. */
 		allSolutions.getParallelStream().filter(solution -> solution.getIndex() < noGraphs).forEach(solution -> {
@@ -381,7 +392,7 @@ public class APE {
 				String title = "SolutionNo_" + solution.getIndex() + "_length_" + solution.getSolutionlength();
 				String path = graphsFolder + "/" + title;
 				solution.getControlflowGraph(title, orientation)
-						.getWrite2File(new File(path));
+					.getWrite2File(new File(path));
 				System.out.print(".");
 			} catch (IOException e) {
 				System.err.println("Error occured while writing a graph to the file system.");
@@ -392,6 +403,6 @@ public class APE {
 
 		return true;
 	}
-	
-	
+
+
 }
