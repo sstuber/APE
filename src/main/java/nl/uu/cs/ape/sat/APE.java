@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 
+import nl.uu.cs.ape.sat.core.ExternalConstraintBuilder;
 import nl.uu.cs.ape.sat.core.ExternalConstraintFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -226,6 +227,10 @@ public class APE {
 		SATsolutionsList solutions = executeSynthesis();
 
 		return solutions;
+	}
+
+	public void AddExternalConstraint(ExternalConstraintBuilder constraintBuilder) {
+		externalConstraintFactory.AddConstraintBuilder(constraintBuilder);
 	}
 
 	/**
