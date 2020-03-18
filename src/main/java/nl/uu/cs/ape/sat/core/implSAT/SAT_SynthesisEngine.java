@@ -202,6 +202,13 @@ public class SAT_SynthesisEngine implements SynthesisEngine {
 		 */
 		cnfEncoding = cnfEncoding.append(domainSetup.getConstraintsForAuxiliaryPredicates(mappings, moduleAutomaton, typeAutomaton));
 
+		// adding external constraints
+
+		StringBuilder test = externalConstraintFactory.ConstructConstraints();
+
+		cnfEncoding.append(test);
+
+
 		/*
 		 * Counting the number of variables and clauses that will be given to the SAT solver
 		 * TODO Improve this approach, no need to read the whole String again to cound lines.

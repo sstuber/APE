@@ -14,7 +14,7 @@ import nl.uu.cs.ape.sat.utils.APEUtils;
 public class LocalRun {
 
 	public static void main(String[] args) {
-		
+
 		String path = "C:/University/scriptie/QuAnGis/WorkflowSynthesis/testwfalgebra/";
 
 
@@ -35,7 +35,7 @@ public class LocalRun {
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
-		
+
 		APE apeFramework = null;
 		try {
 			apeFramework = new APE(file.getAbsolutePath());
@@ -48,7 +48,7 @@ public class LocalRun {
 		} catch (ExceptionInInitializerError e) {
 			System.err.println(e.getMessage());
 		}
-		
+		//apeFramework.AddExternalConstraint(new ExternalConstraintExample());
 		SATsolutionsList solutions;
 		try {
 			solutions = apeFramework.runSynthesis(file.getAbsolutePath(), apeFramework.getDomainSetup());
@@ -70,7 +70,7 @@ public class LocalRun {
 				apeFramework.writeDataFlowGraphs(solutions, RankDir.TOP_TO_BOTTOM);
 //				apeFramework.writeControlFlowGraphs(solutions, RankDir.LEFT_TO_RIGHT);
 				apeFramework.writeExecutableWorkflows(solutions);
-				
+
 //				CWLCreator cwl = new CWLCreator(solutions.get(0), apeFramework.getConfig());
 //				APEUtils.write2file(cwl.getCWL(), new File(path + subPath + "tmp"), false);
 			} catch (IOException e) {
