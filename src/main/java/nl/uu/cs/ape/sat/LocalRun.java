@@ -46,6 +46,9 @@ public class LocalRun {
 			System.err.println("Error in reading the configuration file.");
 			return;
 		}
+
+		//apeFramework.AddExternalConstraint(new ExternalConstraintExample());
+
 		SATsolutionsList solutions;
 		try {
 			solutions = apeFramework.runSynthesis(file.getAbsolutePath());

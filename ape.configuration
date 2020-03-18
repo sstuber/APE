@@ -9,11 +9,11 @@
   "solutions_path": "C:/University/scriptie/APE_UseCases-master/SimpleDemo/sat_solutions.txt",
   "solution_min_length": "1",
   "solution_max_length": "8",
-  "max_solutions": "100",
+  "max_solutions": "5",
   "execution_scripts_folder": "C:/University/scriptie/APE_UseCases-master/SimpleDemo/Implementations/",
   "number_of_execution_scripts": "6",
   "solution_graphs_folder": "C:/University/scriptie/APE_UseCases-master/SimpleDemo/Figures",
-  "number_of_generated_graphs": "100",
+  "number_of_generated_graphs": "5",
   "inputs": [
     {
       "TypesTaxonomy": "XYZ_table_file"

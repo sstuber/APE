@@ -20,13 +20,9 @@ import org.sat4j.specs.TimeoutException;
 
 import nl.uu.cs.ape.sat.automaton.ModuleAutomaton;
 import nl.uu.cs.ape.sat.automaton.TypeAutomaton;
-import nl.uu.cs.ape.sat.constraints.ConstraintFactory;
 import nl.uu.cs.ape.sat.core.SynthesisEngine;
 import nl.uu.cs.ape.sat.core.solutionStructure.SolutionWorkflow;
-import nl.uu.cs.ape.sat.models.AllModules;
-import nl.uu.cs.ape.sat.models.AllTypes;
 import nl.uu.cs.ape.sat.models.AtomMappings;
-import nl.uu.cs.ape.sat.models.ConstraintData;
 import nl.uu.cs.ape.sat.models.Type;
 import nl.uu.cs.ape.sat.models.SATEncodingUtils.ModuleUtils;
 import nl.uu.cs.ape.sat.models.SATEncodingUtils.TypeUtils;
@@ -195,6 +191,13 @@ public class SAT_SynthesisEngine implements SynthesisEngine {
 		cnfEncoding = cnfEncoding.append(outputDataEncoding);
 
 		cnfEncoding = cnfEncoding.append(domainSetup.getConstraintsForHelperPredicates(mappings, moduleAutomaton, typeAutomaton));
+
+		// adding external constraints
+
+		StringBuilder test = externalConstraintFactory.ConstructConstraints();
+
+		cnfEncoding.append(test);
+
 
 		/*
 		 * Counting the number of variables and clauses that will be given to the SAT
