@@ -5,7 +5,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import nl.uu.cs.ape.sat.core.ExternalConstraintFactory;
+import nl.uu.cs.ape.sat.core.extrernal.ExternalConstraintFactory;
 import org.apache.commons.io.IOUtils;
 import org.sat4j.core.VecInt;
 import org.sat4j.minisat.SolverFactory;

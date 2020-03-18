@@ -1,4 +1,4 @@
-package nl.uu.cs.ape.sat.core;
+package nl.uu.cs.ape.sat.core.extrernal;
 
 import nl.uu.cs.ape.sat.automaton.ModuleAutomaton;
 import nl.uu.cs.ape.sat.automaton.TypeAutomaton;

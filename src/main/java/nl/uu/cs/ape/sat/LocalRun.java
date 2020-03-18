@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
 
+import nl.uu.cs.ape.sat.core.extrernal.ExternalConstraintExample;
 import org.json.JSONException;
 
 import guru.nidi.graphviz.attribute.RankDir;
