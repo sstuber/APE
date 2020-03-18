@@ -1,9 +1,8 @@
-package nl.uu.cs.ape.sat.core;
+package nl.uu.cs.ape.sat.core.extrernal;
 
 import nl.uu.cs.ape.sat.automaton.ModuleAutomaton;
 import nl.uu.cs.ape.sat.automaton.TypeAutomaton;
 import nl.uu.cs.ape.sat.models.AtomMappings;
-import nl.uu.cs.ape.sat.models.logic.constructs.Atom;
 import nl.uu.cs.ape.sat.utils.APEDomainSetup;
 
 import java.util.ArrayList;

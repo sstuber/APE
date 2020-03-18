@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 
-import nl.uu.cs.ape.sat.core.ExternalConstraintBuilder;
-import nl.uu.cs.ape.sat.core.ExternalConstraintFactory;
+import nl.uu.cs.ape.sat.core.extrernal.ExternalConstraintBuilder;
+import nl.uu.cs.ape.sat.core.extrernal.ExternalConstraintFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
 
