@@ -15,39 +15,57 @@ import nl.uu.cs.ape.sat.models.enums.WorkflowElement;
 import nl.uu.cs.ape.sat.models.logic.constructs.Literal;
 import nl.uu.cs.ape.sat.models.logic.constructs.PredicateLabel;
 
+import javax.swing.*;
+
 /**
  * The {@code SAT_solution} class describes the solution produced by the SAT
  * solver. It stores the original solution and the mapped one. In case of the
  * parameter <b>unsat</b> being {@code true}, there are no solutions. <br>
  * <br>
  * It also implements general solution interface {@link SolutionInterpreter}.
- * 
- * @author Vedran Kasalica
  *
+ * @author Vedran Kasalica
  */
 public class SAT_solution extends SolutionInterpreter {
 
-	/** List of all the literals provided by the solution.*/
+	/**
+	 * List of all the literals provided by the solution.
+	 */
 	private final List<Literal> literals;
-	/** List of all the positive literals provided by the solution.*/
+	/**
+	 * List of all the positive literals provided by the solution.
+	 */
 	private final List<Literal> postitiveLiterals;
-	/**List of only relevant (positive) literals that represent implemented
-	 * modules/tools.  */
+	/**
+	 * List of only relevant (positive) literals that represent implemented
+	 * modules/tools.
+	 */
 	private final List<Literal> relevantModules;
-	/** List of only relevant (positive) literals that represent simple types.*/
+	/**
+	 * List of only relevant (positive) literals that represent simple types.
+	 */
 	private final List<Literal> relevantTypes;
-	/** List of all the relevant types and modules combined.  */
+	/**
+	 * List of all the relevant types and modules combined.
+	 */
 	private final List<Literal> relevantElements;
-	/** List of all the references for the types in the memory, when used as tool inputs.  */
+	/**
+	 * List of all the references for the types in the memory, when used as tool inputs.
+	 */
 	private final List<Literal> references2MemTypes;
+
+	private final List<Literal> relevantExternals;
+
 	private final Set<PredicateLabel> usedTypeStates;
-	/** True if the there is no solution to the problem. Problem is UNASATISFIABLE. */
+	/**
+	 * True if the there is no solution to the problem. Problem is UNASATISFIABLE.
+	 */
 	private final boolean unsat;
 
 
 	/**
 	 * Creating a list of Literals to represent the solution.
-	 * 
+	 *
 	 * @param satSolution - list of mapped literals given as a list of integers
 	 *                    (library SAT output)
 	 * @param atomMapping - mapping of the atoms
@@ -61,6 +79,8 @@ public class SAT_solution extends SolutionInterpreter {
 		relevantModules = new ArrayList<Literal>();
 		relevantTypes = new ArrayList<Literal>();
 		relevantElements = new ArrayList<Literal>();
+		relevantExternals = new ArrayList<>();
+
 		references2MemTypes = new ArrayList<Literal>();
 		usedTypeStates = new HashSet<PredicateLabel>();
 		for (int mappedLiteral : satSolution) {
@@ -73,17 +93,25 @@ public class SAT_solution extends SolutionInterpreter {
 						/* add all positive literals that describe tool implementations */
 						relevantElements.add(currLiteral);
 						relevantModules.add(currLiteral);
+
+					} else if (currLiteral.getWorkflowElementType() == WorkflowElement.EXTERNAL) {
+						relevantElements.add(currLiteral);
+						relevantExternals.add(currLiteral);
+
 					} else if (currLiteral.getWorkflowElementType() != WorkflowElement.MODULE && currLiteral.getWorkflowElementType() != WorkflowElement.MEM_TYPE_REFERENCE
-							&& (currLiteral.getPredicate() instanceof Type) && ((Type) currLiteral.getPredicate()).isSimplePredicate()) {
+						&& (currLiteral.getPredicate() instanceof Type) && ((Type) currLiteral.getPredicate()).isSimplePredicate()) {
 						/* add all positive literals that describe simple types */
 						relevantElements.add(currLiteral);
 						relevantTypes.add(currLiteral);
 						usedTypeStates.add(currLiteral.getUsedInStateArgument());
-					} else if(currLiteral.getPredicate() instanceof State && ((State) (currLiteral.getPredicate())).getAbsoluteStateNumber() != -1) {
+					} else if (currLiteral.getPredicate() instanceof State && ((State) (currLiteral.getPredicate())).getAbsoluteStateNumber() != -1) {
 						/* add all positive literals that describe memory type references that are not pointing to null state (NULL state has AbsoluteStateNumber == -1) */
 						references2MemTypes.add(currLiteral);
 						relevantElements.add(currLiteral);
-					} 
+
+
+					}
+
 				}
 			}
 		}
@@ -105,12 +133,13 @@ public class SAT_solution extends SolutionInterpreter {
 		relevantTypes = null;
 		relevantElements = null;
 		references2MemTypes = null;
+		relevantExternals = null;
 		usedTypeStates = null;
 	}
 
 	/**
 	 * Returns the solution in human readable format.
-	 * 
+	 *
 	 * @return String representing the solution (only positive literals).
 	 */
 	public String getSolution() {
@@ -130,7 +159,7 @@ public class SAT_solution extends SolutionInterpreter {
 	 * format, filtering out the information that are not required to generate the
 	 * workflow. The solution literals are sorted according the state they are used
 	 * in.
-	 * 
+	 *
 	 * @return String representing the tools used in the solution
 	 */
 	public String getRelevantToolsInSolution() {
@@ -150,7 +179,7 @@ public class SAT_solution extends SolutionInterpreter {
 	 * format, filtering out the information that are not required to generate the
 	 * workflow. The solution literals are sorted according the state they are used
 	 * in.
-	 * 
+	 *
 	 * @return String representing the tools and data used in the solutions
 	 */
 	public String getRelevantSolution() {
@@ -158,7 +187,7 @@ public class SAT_solution extends SolutionInterpreter {
 		if (unsat) {
 			solution = new StringBuilder("UNSAT");
 		} else {
-			for(Literal relevantElement : relevantElements) {
+			for (Literal relevantElement : relevantElements) {
 				solution = solution.append(relevantElement.toString() + " ");
 			}
 		}
@@ -167,9 +196,10 @@ public class SAT_solution extends SolutionInterpreter {
 
 	/**
 	 * Returns the list of modules, corresponding to their position in the workflow.
+	 *
 	 * @param allModules - list of all the modules in the domain
 	 * @return List of {@link Module}s in the order they appear in the solution
-	 *         workflow.
+	 * workflow.
 	 */
 	public List<Module> getRelevantSolutionModules(AllModules allModules) {
 		List<Module> solutionModules = new ArrayList<Module>();
@@ -186,12 +216,12 @@ public class SAT_solution extends SolutionInterpreter {
 	/**
 	 * Returns the solution in mapped format. The original solution created by the
 	 * SAT solver.
-	 * 
+	 *
 	 * @return String representing the mapped solution created by SAT solver.
 	 */
 	public String getOriginalSATSolution() {
 		StringBuilder solution = new StringBuilder();
-			if (!unsat) {
+		if (!unsat) {
 			for (Literal literal : literals) {
 				solution = solution.append(literal.toMappedString()).append(" ");
 			}
@@ -203,7 +233,7 @@ public class SAT_solution extends SolutionInterpreter {
 	 * Returns the negated solution in mapped format. Negating the original solution
 	 * created by the SAT solver. Usually used to add to the solver to find new
 	 * solutions.
-	 * 
+	 *
 	 * @return int[] representing the negated solution
 	 */
 	public int[] getNegatedMappedSolutionArray() {
@@ -226,7 +256,7 @@ public class SAT_solution extends SolutionInterpreter {
 	/**
 	 * Returns the satisfiability of the problem. Returns TRUE if the problem is
 	 * satisfiable, FALSE otherwise.
-	 * 
+	 *
 	 * @return TRUE if the problem is satisfiable, FALSE otherwise.
 	 */
 	public boolean isSat() {
