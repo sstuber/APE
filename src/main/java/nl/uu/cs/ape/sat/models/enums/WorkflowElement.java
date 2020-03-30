@@ -8,8 +8,8 @@ package nl.uu.cs.ape.sat.models.enums;
  * <br>
  * {@code TOOL, MEMORY_TYPE, USED_TYPE, MEM_TYPE_REFERENCE}
  */
-public enum WorkflowElement{
-	
+public enum WorkflowElement {
+
 	/**
 	 * Depicts usage of a tool/module.
 	 */
@@ -25,17 +25,20 @@ public enum WorkflowElement{
 	/**
 	 * Depicts the usage of an already created type instance, as an input for a tool. It references the created data type.
 	 */
-	MEM_TYPE_REFERENCE;
-	
+	MEM_TYPE_REFERENCE,
+
+	EXTERNAL;
+
 	public static String getStringShorcut(WorkflowElement elem, Integer blockNumber, int stateNumber) {
-		
-		if(elem == MODULE) {
+
+		if (elem == MODULE) {
 			return "Tool" + stateNumber;
-		} else if(elem == MEMORY_TYPE) {
+		} else if (elem == MEMORY_TYPE) {
 			return "MemT" + blockNumber + "." + stateNumber;
-		} else if(elem == USED_TYPE) {
+		} else if (elem == USED_TYPE) {
 			return "UsedT" + blockNumber + "." + stateNumber;
-		}
+		} else if (elem == EXTERNAL)
+			return "Ext" + stateNumber;
 		return "NaN";
 	}
 }
