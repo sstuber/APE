@@ -11,6 +11,7 @@ public interface ExternalConstraintBuilder {
 		APEDomainSetup domainSetup,
 		ModuleAutomaton moduleAutomaton,
 		TypeAutomaton typeAutomaton,
-		AtomMappings atomDictionary
+		AtomMappings atomDictionary,
+		int maxBound
 	);
 }

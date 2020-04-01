@@ -14,7 +14,7 @@ import nl.uu.cs.ape.sat.utils.APEDomainSetup;
 public class ExternalConstraintExample implements ExternalConstraintBuilder {
 
 	@Override
-	public StringBuilder Build(APEDomainSetup domainSetup, ModuleAutomaton moduleAutomaton, TypeAutomaton typeAutomaton, AtomMappings atomDictionary) {
+	public StringBuilder Build(APEDomainSetup domainSetup, ModuleAutomaton moduleAutomaton, TypeAutomaton typeAutomaton, AtomMappings atomDictionary, int maxBound) {
 
 		AbstractModule module = domainSetup.getAllModules().get("add_cpt");
 

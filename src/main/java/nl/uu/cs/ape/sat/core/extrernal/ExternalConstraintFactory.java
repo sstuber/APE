@@ -36,10 +36,10 @@ public class ExternalConstraintFactory {
 		this.constraintBuilders.add(builder);
 	}
 
-	public StringBuilder ConstructConstraints(){
+	public StringBuilder ConstructConstraints(int maxBound){
 		StringBuilder result =
 			constraintBuilders.stream()
-				.map(builder -> builder.Build(apeDomain,moduleAutomaton,typeAutomaton,atomDictionary))
+				.map(builder -> builder.Build(apeDomain,moduleAutomaton,typeAutomaton,atomDictionary, maxBound))
 				.reduce(new StringBuilder(), StringBuilder::append);
 
 		return result;
