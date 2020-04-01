@@ -194,7 +194,7 @@ public class SAT_SynthesisEngine implements SynthesisEngine {
 
 		// adding external constraints
 
-		StringBuilder test = externalConstraintFactory.ConstructConstraints();
+		StringBuilder test = externalConstraintFactory.ConstructConstraints(this.getSolutionSize());
 
 		cnfEncoding.append(test);
 
