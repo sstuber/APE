@@ -34,6 +34,9 @@ For more details check a [simple demo](https://github.com/sanctuuary/APE_UseCase
 Like the CLI, the APE API relies on a configuration file that references the domain ontology, tool annotations, workflow specification and execution parameters. However, the API allows to edit this file programmatically, and thus for instance add constraints or change execution parameters dynamically.
 
 ## Demo 
+A web browser demonstrator (beta) of can be found at: http://ape.science.uu.nl/
+Docker version of the demonstrator is available at: https://github.com/sanctuuary/Burke_Docker
+
 Our use cases are motivated by practical problems in various domains (e.g. bioinformatisc, GIS). Multiple predefined scenarios of scientific workflow synthesis can be found at [GitHub Use Cases Repository](https://github.com/sanctuuary/APE_UseCases).
 
 ## How to build APE from source
@@ -53,12 +56,11 @@ We thank our brave first-generation users for their patience and constructive fe
 ## License
 APE is licensed under the Apache 2.0 license.
 
-#### Dependencies
+#### Maven dependencies
 
 1. **OWL API**	-	LGPL or Apache 2.0
 2. **SAT4J**	-	EPL or GNu LGPL
 3. **apache-common-lang**	-	Apache 2.0
-4. **DOM4J**-	BSD
-5. **graphviz-java** - Apache 2.0
-6. **org.json** - [JSON license](https://www.json.org/license.html)
+4. **graphviz-java** - Apache 2.0
+5. **org.json** - [JSON license](https://www.json.org/license.html)
 

@@ -1,3 +1,6 @@
 APE.iml
 .idea/
 target/
+/target/
+.classpath
+.project
