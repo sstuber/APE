@@ -24,7 +24,7 @@ public class Literal implements Comparable<Literal>{
 	/** {@code true} if the atom is negated */
 	private boolean negated;
 	/** The {@link Atom} class represents elements of the workflow, that can be true or not (depending of the truth value of the literal). */
-	private Atom atom;
+	public Atom atom;
 
 	/**
 	 * Generating an object from a mapped representation of the Literal.
