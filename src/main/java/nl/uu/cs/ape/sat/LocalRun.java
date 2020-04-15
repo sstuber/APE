@@ -16,7 +16,7 @@ public class LocalRun {
 
 	public static void main(String[] args) {
 
-		String path = "./";
+		String path = "C:/University/scriptie/QuAnGis/WorkflowSynthesis/testwfalgebra/";
 
 		String fileName = "ape.configuration";
 		if (!APEUtils.isValidReadFile(path + fileName)) {
