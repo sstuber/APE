@@ -29,15 +29,19 @@ public class Main {
 		try {
 			apeFramework = new APE(path);
 		} catch (JSONException e) {
-			System.err.println("Error in parsing the configuration file.");
+			System.err.println(e.getMessage());
 			return;
 		} catch (IOException e) {
-			System.err.println("Error in reading the configuration file.");
+			System.err.println(e.getMessage());
+			return;
+		} catch (ExceptionInInitializerError e) {
+			System.err.println(e.getMessage());
 			return;
 		}
+		
 		SATsolutionsList solutions;
 		try {
-			solutions = apeFramework.runSynthesis(path);
+			solutions = apeFramework.runSynthesis(path, apeFramework.getDomainSetup());
 		} catch (IOException e) {
 			System.err.println("Error in synthesis execution. Writing to the file system failed.");
 			return;
@@ -52,7 +56,7 @@ public class Main {
 			try {
 				apeFramework.writeSolutionToFile(solutions);
 				apeFramework.writeDataFlowGraphs(solutions, RankDir.TOP_TO_BOTTOM);
-//				apeFramework.generateAndWriteControlFlowGraphs(solutions, RankDir.LEFT_TO_RIGHT);
+//				apeFramework.writeControlFlowGraphs(solutions, RankDir.LEFT_TO_RIGHT);
 				apeFramework.writeExecutableWorkflows(solutions);
 			} catch (IOException e) {
 				System.err.println("Error in writing the solutions. to the file system.");

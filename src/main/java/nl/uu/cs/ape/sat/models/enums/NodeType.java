@@ -8,16 +8,12 @@ package nl.uu.cs.ape.sat.models.enums;
  * <br>
  * {@code ROOT, SUBROOT, ABSTRACT, LEAF, INSTANCE, EMPTY}
  */
-public enum NodeType{
+public enum NodeType {
 	
 	/**
 	 * Root node of the (tool or data) taxonomy.
 	 */
 	ROOT,
-	/**
-	 * Direct children of the taxonomy root. Used to create sub taxonomies (e.g type and format data taxonomies)
-	 */
-	SUBROOT,
 	/**
 	 * Non-leaf node in the taxonomy. Usually represents an abstraction over the actual implementation of a tool or data type/format. 
 	 */
@@ -33,10 +29,6 @@ public enum NodeType{
 	/**
 	 * Represents the empty predicate.
 	 */
-	EMPTY,
-	/**
-	 * Unknown Node Type. Usually used  for the undefined types used in the tool annotation file.
-	 */
-	UNKNOWN
+	EMPTY
 	
 }

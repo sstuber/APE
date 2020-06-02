@@ -3,20 +3,19 @@ package nl.uu.cs.ape.sat;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.List;
 
 import org.json.JSONException;
 
 import guru.nidi.graphviz.attribute.RankDir;
 import nl.uu.cs.ape.sat.core.implSAT.SATsolutionsList;
-import nl.uu.cs.ape.sat.core.solutionStructure.SolutionWorkflow;
 import nl.uu.cs.ape.sat.utils.APEUtils;
 
 public class LocalRun {
 
 	public static void main(String[] args) {
-
+		
 		String path = "C:/University/scriptie/QuAnGis/WorkflowSynthesis/testwfalgebra/";
+
 
 		String fileName = "ape.configuration";
 		if (!APEUtils.isValidReadFile(path + fileName)) {
@@ -35,20 +34,23 @@ public class LocalRun {
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
-
+		
 		APE apeFramework = null;
 		try {
 			apeFramework = new APE(file.getAbsolutePath());
 		} catch (JSONException e) {
-			System.err.println("Error in parsing the configuration file.");
+			System.err.println(e.getMessage());
 			return;
 		} catch (IOException e) {
-			System.err.println("Error in reading the configuration file.");
+			System.err.println(e.getMessage());
 			return;
+		} catch (ExceptionInInitializerError e) {
+			System.err.println(e.getMessage());
 		}
+		
 		SATsolutionsList solutions;
 		try {
-			solutions = apeFramework.runSynthesis(file.getAbsolutePath());
+			solutions = apeFramework.runSynthesis(file.getAbsolutePath(), apeFramework.getDomainSetup());
 		} catch (IOException e) {
 			System.err.println("Error in synthesis execution. Writing to the file system failed.");
 			return;
@@ -67,6 +69,9 @@ public class LocalRun {
 				apeFramework.writeDataFlowGraphs(solutions, RankDir.TOP_TO_BOTTOM);
 //				apeFramework.writeControlFlowGraphs(solutions, RankDir.LEFT_TO_RIGHT);
 				apeFramework.writeExecutableWorkflows(solutions);
+				
+//				CWLCreator cwl = new CWLCreator(solutions.get(0), apeFramework.getConfig());
+//				APEUtils.write2file(cwl.getCWL(), new File(path + subPath + "tmp"), false);
 			} catch (IOException e) {
 				System.err.println("Error in writing the solutions. to the file system.");
 				e.printStackTrace();

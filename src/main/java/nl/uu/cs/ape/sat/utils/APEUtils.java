@@ -32,6 +32,7 @@ import org.json.JSONObject;
 
 import nl.uu.cs.ape.sat.automaton.ModuleAutomaton;
 import nl.uu.cs.ape.sat.automaton.TypeAutomaton;
+import nl.uu.cs.ape.sat.core.solutionStructure.TypeNode;
 import nl.uu.cs.ape.sat.models.AtomMappings;
 import nl.uu.cs.ape.sat.models.ConstraintTemplateData;
 import nl.uu.cs.ape.sat.models.Module;
@@ -59,9 +60,11 @@ public final class APEUtils {
 	}
 
 	/**
-	 * Method read the constraints from a JSON file and updates the {@link APEDomainSetup} object accordingly.
+	 * Method read the constraints from a JSON file and updates the
+	 * {@link APEDomainSetup} object accordingly.
+	 * 
 	 * @param constraintsPath - path to the constraint file
-	 * @param domainSetup - object that represents the domain variables
+	 * @param domainSetup     - object that represents the domain variables
 	 */
 	public static void readConstraints(String constraintsPath, APEDomainSetup domainSetup) {
 		if (constraintsPath == null) {
@@ -78,36 +81,42 @@ public final class APEUtils {
 			try {
 				constraintID = jsonConstraint.getString(CONSTR_ID_TAG);
 
-				List<JSONArray> jsonConstParam = getListFromJson(jsonConstraint, CONSTR_PARAM_JSON_TAG, JSONArray.class);
+				List<JSONArray> jsonConstParam = getListFromJson(jsonConstraint, CONSTR_PARAM_JSON_TAG,
+						JSONArray.class);
 				parameters = new ArrayList<TaxonomyPredicate>();
 				/* for each constraint parameter */
 				for (JSONArray jsonParam : jsonConstParam) {
 					SortedSet<TaxonomyPredicate> currParameter = new TreeSet<TaxonomyPredicate>();
-					for(String paramLabel : getListFromJsonList(jsonParam, String.class)) {
+					for (String paramLabel : getListFromJsonList(jsonParam, String.class)) {
 						String paramURI = createClassURI(paramLabel, domainSetup.getOntologyPrefixURI());
 						/* generate the corresponding ConstraintParameter object */
 						TaxonomyPredicate currParamDimension = domainSetup.getAllModules().get(paramURI);
-						if(currParamDimension == null) {
+						if (currParamDimension == null) {
 							currParamDimension = domainSetup.getAllTypes().get(paramURI);
 						}
-						if(currParamDimension == null) {
+						if (currParamDimension == null) {
 							System.err.println("Constraint parameter '" + paramURI + "' is not defined in the domain.");
 							throw new JSONException("JSON constrains semnatics error.");
 						} else {
 							currParameter.add(currParamDimension);
 						}
 					}
-					/* Generate an abstract term to generalize over the set of predicates that describe the parameter. */
-					TaxonomyPredicate absCurrParam = domainSetup.generateAuxiliaryPredicate(currParameter, LogicOperation.AND);
+					/*
+					 * Generate an abstract term to generalize over the set of predicates that
+					 * describe the parameter.
+					 */
+					TaxonomyPredicate absCurrParam = domainSetup.generateAuxiliaryPredicate(currParameter,
+							LogicOperation.AND);
 					parameters.add(absCurrParam);
 				}
 			} catch (JSONException e) {
-				System.err.println("Error in file: " + constraintsPath + ", at constraint no: " + currNode
-						+ " (" + constraintID + "). Bad format. Constraint skipped.");
+				System.err.println("Error in file: " + constraintsPath + ", at constraint no: " + currNode + " ("
+						+ constraintID + "). Bad format. Constraint skipped.");
 				continue;
 			}
-			ConstraintTemplateData currConstr = domainSetup.getConstraintFactory().addConstraintTemplateData(constraintID, parameters);
-			if(parameters.stream().filter(predicate -> predicate == null).count() > 0){
+			ConstraintTemplateData currConstr = domainSetup.getConstraintFactory()
+					.addConstraintTemplateData(constraintID, parameters);
+			if (parameters.stream().filter(predicate -> predicate == null).count() > 0) {
 				System.err.println("Constraint argument does not exist in the tool taxonomy.");
 			} else {
 				domainSetup.addConstraintData(currConstr);
@@ -117,14 +126,15 @@ public final class APEUtils {
 
 	/**
 	 * Returns the CNF representation of the SLTL constraints in our project
+	 * 
 	 * @param domainSetup
 	 * @param mappings
 	 * @param moduleAutomaton
 	 * @param typeAutomaton
 	 * @return
 	 */
-	public static String encodeAPEConstraints(APEDomainSetup domainSetup, AtomMappings mappings, ModuleAutomaton moduleAutomaton,
-			TypeAutomaton typeAutomaton) {
+	public static String encodeAPEConstraints(APEDomainSetup domainSetup, AtomMappings mappings,
+			ModuleAutomaton moduleAutomaton, TypeAutomaton typeAutomaton) {
 
 		String cnf_SLTL = "";
 		int currConst = 0;
@@ -138,8 +148,7 @@ public final class APEUtils {
 				continue;
 			} else {
 				String currConstrEncoding = constraintSATEncoding(constraint.getConstraintID(),
-						constraint.getParameters(), domainSetup, moduleAutomaton,
-						typeAutomaton, mappings);
+						constraint.getParameters(), domainSetup, moduleAutomaton, typeAutomaton, mappings);
 				if (currConstrEncoding == null) {
 					System.err
 							.println("Error in constraint file. Constraint no: " + currConst + ". Constraint skipped.");
@@ -162,9 +171,10 @@ public final class APEUtils {
 	 *         constraint.
 	 */
 	public static String constraintSATEncoding(String constraintID, List<TaxonomyPredicate> parameters,
-			APEDomainSetup domainSetup,
-			ModuleAutomaton moduleAutomaton, TypeAutomaton typeAutomaton, AtomMappings mappings) {
-		String constraint = domainSetup.getConstraintTamplate(constraintID).getConstraint(parameters, domainSetup, moduleAutomaton, typeAutomaton, mappings);
+			APEDomainSetup domainSetup, ModuleAutomaton moduleAutomaton, TypeAutomaton typeAutomaton,
+			AtomMappings mappings) {
+		String constraint = domainSetup.getConstraintTamplate(constraintID).getConstraint(parameters, domainSetup,
+				moduleAutomaton, typeAutomaton, mappings);
 
 		return constraint;
 	}
@@ -177,17 +187,13 @@ public final class APEUtils {
 	 * @param file   - the system-dependent file name
 	 * @param append - if true, then bytes will be written to the end of the file
 	 *               rather than the beginning
+	 * @throws IOException - file not found
 	 */
-	public static boolean write2file(String text, File file, boolean append) {
+	public static boolean write2file(String text, File file, boolean append) throws IOException {
 
-		try {
-			FileWriter fw = new FileWriter(file, append);
-			fw.write(text);
-			fw.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-			return false;
-		}
+		FileWriter fw = new FileWriter(file, append);
+		fw.write(text);
+		fw.close();
 
 		return true;
 	}
@@ -203,7 +209,7 @@ public final class APEUtils {
 	 * @return the list of all annotated Modules in the process (possibly empty
 	 *         list)
 	 */
-	public static List<Module> readModuleJson(String file, APEDomainSetup domainSetup) {
+	public static boolean readModuleJson(String file, APEDomainSetup domainSetup) {
 		List<Module> modulesNew = new ArrayList<Module>();
 		int currModule = 0;
 		for (JSONObject jsonModule : safe(getListFromJson(file, TOOLS_JSOM_TAG))) {
@@ -219,32 +225,38 @@ public final class APEUtils {
 				continue;
 			}
 		}
-		return modulesNew;
+		if (currModule == 0) {
+			System.err.println("No tools were anntoated.");
+			return false;
+		}
+		return true;
 	}
-	
+
 	/**
 	 * Create the full class URI (ID) based on the label and the OWL prefix.
-	 * @param label label of the current term
+	 * 
+	 * @param label             label of the current term
 	 * @param ontologyPrefixURI - OWL prexif information
 	 * @return string representing full OWL class URI.
 	 */
 	public static String createClassURI(String label, String ontologyPrefixURI) {
-		if(label.startsWith("http")) {
+		if (label.startsWith("http")) {
 			return label;
 		} else {
 			return ontologyPrefixURI + label;
 		}
 	}
-	
+
 	/**
 	 * Create the full class URI (ID) based on the label and the OWL prefix.
+	 * 
 	 * @param taxonomyModules label of the current term
-	 * @param domainSetup - domain annotation containing OWL prexif information
+	 * @param domainSetup     - domain annotation containing OWL prexif information
 	 * @return string representing full OWL class URI.
 	 */
 	public static Set<String> createURIsFromLabels(Set<String> taxonomyTerms, String ontologyPrefixURI) {
 		Set<String> taxonomyTermURIs = new HashSet<>();
-		for(String taxonomyTermLabel : taxonomyTerms){
+		for (String taxonomyTermLabel : taxonomyTerms) {
 			taxonomyTermURIs.add(createClassURI(taxonomyTermLabel, ontologyPrefixURI));
 		}
 		return taxonomyTermURIs;
@@ -300,15 +312,16 @@ public final class APEUtils {
 	public static List<JSONObject> getListFromJson(String jsonPath, String key) {
 		try {
 			String content = FileUtils.readFileToString(new File(jsonPath), "utf-8");
-			// Convert JSON string to JSONObject
 			JSONObject jsonObject = new JSONObject(content);
-
 			List<JSONObject> jsonArray = getListFromJson(jsonObject, key, JSONObject.class);
 
 			return jsonArray;
 
-		} catch (Exception e1) {
+		} catch (JSONException e1) {
 			System.err.println("Error parsing the Json file: " + jsonPath);
+			return null;
+		} catch (IOException e) {
+			System.err.println("Error reading the Json file: " + jsonPath);
 			return null;
 		}
 	}
@@ -347,13 +360,16 @@ public final class APEUtils {
 		}
 
 	}
+
 	/**
-	 * The method converts the {@link JSONArray} object to {@link List} of objects of the given structure.
+	 * The method converts the {@link JSONArray} object to {@link List} of objects
+	 * of the given structure.
+	 * 
 	 * @param jsonArray - given json array object
-	 * @param clazz - class type that the elements of the array are
+	 * @param clazz     - class type that the elements of the array are
 	 * @return List of objects of type clazz
 	 */
-	public static <T> List<T> getListFromJsonList(JSONArray jsonArray, Class<T> clazz){
+	public static <T> List<T> getListFromJsonList(JSONArray jsonArray, Class<T> clazz) {
 		List<T> newList = new ArrayList<T>();
 		for (int i = 0; i < jsonArray.length(); i++) {
 			T element = (T) jsonArray.get(i);
@@ -414,11 +430,15 @@ public final class APEUtils {
 			System.out.println("-------------------------------------------------------------");
 			System.out.println("\tTool Taxonomy:");
 			System.out.println("-------------------------------------------------------------");
-			domainSetup.getAllModules().getRootPredicate().printTree(" ", domainSetup.getAllModules());
+			domainSetup.getAllModules().getRootPredicates().get(0).printTree(" ", domainSetup.getAllModules());
 			System.out.println("\n-------------------------------------------------------------");
-			System.out.println("\tData Taxonomy:");
-			System.out.println("-------------------------------------------------------------");
-			domainSetup.getAllTypes().getRootPredicate().printTree(" ", domainSetup.getAllTypes());
+			System.out.println("\tData Taxonomy dimensions:");
+			for (TaxonomyPredicate dimension : domainSetup.getAllTypes().getRootPredicates()) {
+				System.out.println("\n-------------------------------------------------------------");
+				System.out.println("\t" + dimension.getPredicateLabel() + "Taxonomy:");
+				System.out.println("-------------------------------------------------------------");
+				dimension.printTree(" ", domainSetup.getAllTypes());
+			}
 
 			/*
 			 * Printing the tool annotations
@@ -493,6 +513,35 @@ public final class APEUtils {
 		} else {
 			return currList.get(index);
 		}
+	}
+
+	/**
+	 * Functions sets an element into the list at a specific place, if the element
+	 * already exists, it overrides it. If the element is out of bound it creates
+	 * null elements to fit the given size of the array and then adds the new
+	 * element. If the index is negative number it does not change the array.
+	 * 
+	 * @param list    = list that is manipulated
+	 * @param index   - absolute position of the new element
+	 * @param element - new element to be added to the list
+	 * @throws IndexOutOfBoundsException - if the index is out of range (index < 0)
+	 */
+	public static <E> void safeSet(List<E> list, int index, E element) {
+		if (index < 0) {
+			throw new IndexOutOfBoundsException();
+		}
+		if (list.size() == index) {
+			list.add(element);
+		} else if (list.size() >= index) {
+			list.set(index, element);
+		}
+		if (list.size() < index) {
+			for (int i = list.size(); i < index; i++) {
+				list.add(null);
+			}
+			list.add(element);
+		}
+
 	}
 
 	/**
@@ -608,73 +657,73 @@ public final class APEUtils {
 	public static JSONObject convertBioTools2Ape(JSONArray bioToolsAnotation) throws JSONException {
 		JSONArray apeToolsAnnotations = new JSONArray();
 		for (int i = 0; i < bioToolsAnotation.length(); i++) {
-			
+
 			JSONObject bioJsonTool = bioToolsAnotation.getJSONObject(i);
 			List<JSONObject> functions = APEUtils.getListFromJson(bioJsonTool, "function", JSONObject.class);
 			int functionNo = 1;
-			for(JSONObject function : functions) {
+			for (JSONObject function : functions) {
 				JSONObject apeJsonTool = new JSONObject();
-			apeJsonTool.put("label", bioJsonTool.getString("name"));
-			apeJsonTool.put("id", bioJsonTool.getString("biotoolsID") + functionNo++);
+				apeJsonTool.put("label", bioJsonTool.getString("name"));
+				apeJsonTool.put("id", bioJsonTool.getString("biotoolsID") + functionNo++);
 
-			JSONArray apeTaxonomyTerms = new JSONArray();
-			
-			JSONArray operations = function.getJSONArray("operation");
-			for (int j = 0; j < operations.length(); j++) {
-				JSONObject bioOperation = operations.getJSONObject(j);
-				apeTaxonomyTerms.put(bioOperation.get("uri"));
-			}
-			apeJsonTool.put("taxonomyOperations", apeTaxonomyTerms);
+				JSONArray apeTaxonomyTerms = new JSONArray();
+
+				JSONArray operations = function.getJSONArray("operation");
+				for (int j = 0; j < operations.length(); j++) {
+					JSONObject bioOperation = operations.getJSONObject(j);
+					apeTaxonomyTerms.put(bioOperation.get("uri"));
+				}
+				apeJsonTool.put("taxonomyOperations", apeTaxonomyTerms);
 //			reading inputs
-			JSONArray apeInputs = new JSONArray();
-			JSONArray bioInputs = function.getJSONArray("input");
+				JSONArray apeInputs = new JSONArray();
+				JSONArray bioInputs = function.getJSONArray("input");
 //			for each input
-			for (int j = 0; j < bioInputs.length(); j++) {
-				JSONObject bioInput = bioInputs.getJSONObject(j);
-				JSONObject apeInput = new JSONObject();
-				JSONArray apeInputTypes = new JSONArray();
-				JSONArray apeInputFormats = new JSONArray();
+				for (int j = 0; j < bioInputs.length(); j++) {
+					JSONObject bioInput = bioInputs.getJSONObject(j);
+					JSONObject apeInput = new JSONObject();
+					JSONArray apeInputTypes = new JSONArray();
+					JSONArray apeInputFormats = new JSONArray();
 //				add all data types
-				for (JSONObject bioType : APEUtils.getListFromJson(bioInput, "data", JSONObject.class)) {
-					apeInputTypes.put(bioType.getString("uri"));
-				}
-				apeInput.put("data_0006", apeInputTypes);
+					for (JSONObject bioType : APEUtils.getListFromJson(bioInput, "data", JSONObject.class)) {
+						apeInputTypes.put(bioType.getString("uri"));
+					}
+					apeInput.put("data_0006", apeInputTypes);
 //				add all data formats (or just the first one)
-				for (JSONObject bioType : APEUtils.getListFromJson(bioInput, "format", JSONObject.class)) {
+					for (JSONObject bioType : APEUtils.getListFromJson(bioInput, "format", JSONObject.class)) {
 						apeInputFormats.put(bioType.getString("uri"));
-				}
-				apeInput.put("format_1915$OR$", apeInputFormats);
+					}
+					apeInput.put("format_1915$OR$", apeInputFormats);
 
-				apeInputs.put(apeInput);
-			}
-			apeJsonTool.put("inputs", apeInputs);
+					apeInputs.put(apeInput);
+				}
+				apeJsonTool.put("inputs", apeInputs);
 
 //			reading outputs
-			JSONArray apeOutputs = new JSONArray();
-			JSONArray bioOutputs = function.getJSONArray("output");
+				JSONArray apeOutputs = new JSONArray();
+				JSONArray bioOutputs = function.getJSONArray("output");
 //			for each output
-			for (int j = 0; j < bioOutputs.length(); j++) {
+				for (int j = 0; j < bioOutputs.length(); j++) {
 
-				JSONObject bioOutput = bioOutputs.getJSONObject(j);
-				JSONObject apeOutput = new JSONObject();
-				JSONArray apeOutputTypes = new JSONArray();
-				JSONArray apeOutputFormats = new JSONArray();
+					JSONObject bioOutput = bioOutputs.getJSONObject(j);
+					JSONObject apeOutput = new JSONObject();
+					JSONArray apeOutputTypes = new JSONArray();
+					JSONArray apeOutputFormats = new JSONArray();
 //				add all data types
-				for (JSONObject bioType : APEUtils.getListFromJson(bioOutput, "data", JSONObject.class)) {
-					apeOutputTypes.put(bioType.getString("uri"));
-				}
-				apeOutput.put("data_0006", apeOutputTypes);
+					for (JSONObject bioType : APEUtils.getListFromJson(bioOutput, "data", JSONObject.class)) {
+						apeOutputTypes.put(bioType.getString("uri"));
+					}
+					apeOutput.put("data_0006", apeOutputTypes);
 //				add all data formats
-				for (JSONObject bioType : APEUtils.getListFromJson(bioOutput, "format", JSONObject.class)) {
+					for (JSONObject bioType : APEUtils.getListFromJson(bioOutput, "format", JSONObject.class)) {
 						apeOutputFormats.put(bioType.getString("uri"));
+					}
+					apeOutput.put("format_1915$OR$", apeOutputFormats);
+
+					apeOutputs.put(apeOutput);
 				}
-				apeOutput.put("format_1915$OR$", apeOutputFormats);
+				apeJsonTool.put("outputs", apeOutputs);
 
-				apeOutputs.put(apeOutput);
-			}
-			apeJsonTool.put("outputs", apeOutputs);
-
-			apeToolsAnnotations.put(apeJsonTool);
+				apeToolsAnnotations.put(apeJsonTool);
 			}
 		}
 
@@ -695,12 +744,12 @@ public final class APEUtils {
 
 			if (intAtom > 0) {
 				Atom atom = mappings.findOriginal(intAtom);
-				humanReadable = humanReadable.append(atom.getPredicate().getPredicateID()).append("[")
-						.append(atom.getUsedInStateArgument().getPredicateID()).append("] ");
+				humanReadable = humanReadable.append(atom.getPredicate().getPredicateID()).append("(")
+						.append(atom.getUsedInStateArgument().getPredicateID()).append(") ");
 			} else if (intAtom < 0) {
 				Atom atom = mappings.findOriginal(-intAtom);
-				humanReadable = humanReadable.append("~").append(atom.getPredicate().getPredicateID()).append("[")
-						.append(atom.getUsedInStateArgument().getPredicateID()).append("] ");
+				humanReadable = humanReadable.append("-").append(atom.getPredicate().getPredicateID()).append("(")
+						.append(atom.getUsedInStateArgument().getPredicateID()).append(") ");
 			} else {
 				humanReadable = humanReadable.append("\n");
 			}
@@ -711,17 +760,34 @@ public final class APEUtils {
 	}
 
 	/**
-	 * Method creates a label based on the list of predicates and the logical operator.
-	 * @param relatedPredicates - list of predicates that should be used to create the new label.
-	 * @param logicOp - logical operator that configures the label.
-	 * @return - String representing a new label made based on the predicates and the logical operator.
+	 * Return the string without its last character.
+	 * 
+	 * @param str - given string
+	 * @return Given string without its last character.
+	 */
+	public static String removeLastChar(String str) {
+		if (str != null && str.length() > 0) {
+			str = str.substring(0, str.length() - 1);
+		}
+		return str;
+	}
+
+	/**
+	 * Method creates a label based on the list of predicates and the logical
+	 * operator.
+	 * 
+	 * @param relatedPredicates - list of predicates that should be used to create
+	 *                          the new label.
+	 * @param logicOp           - logical operator that configures the label.
+	 * @return - String representing a new label made based on the predicates and
+	 *         the logical operator.
 	 */
 	public static String getLabelFromList(SortedSet<TaxonomyPredicate> relatedPredicates, LogicOperation logicOp) {
 		StringBuilder abstractLabel = new StringBuilder(logicOp.toStringSign());
-		for(TaxonomyPredicate label : relatedPredicates) {
+		for (TaxonomyPredicate label : relatedPredicates) {
 			abstractLabel = abstractLabel.append(label.getPredicateLabel()).append(logicOp.toStringSign());
 		}
-		
+
 		return abstractLabel.toString();
 	}
 

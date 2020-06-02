@@ -50,12 +50,25 @@ public class Atom {
 		return predicate;
 	}
 
+	
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
 	@Override
 	public int hashCode() {
-		return predicate.hashCode() + argumentState.hashCode();
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((argumentState == null) ? 0 : argumentState.hashCode());
+		result = prime * result + ((elementType == null) ? 0 : elementType.hashCode());
+		result = prime * result + ((predicate == null) ? 0 : predicate.hashCode());
+		return result;
 	}
 
 
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -65,10 +78,22 @@ public class Atom {
 		if (getClass() != obj.getClass())
 			return false;
 		Atom other = (Atom) obj;
-		
-		return this.predicate.equals(other.getPredicate()) && this.argumentState.equals(other.getUsedInStateArgument());
+		if (argumentState == null) {
+			if (other.argumentState != null)
+				return false;
+		} else if (!argumentState.equals(other.argumentState))
+			return false;
+		if (elementType != other.elementType)
+			return false;
+		if (predicate == null) {
+			if (other.predicate != null)
+				return false;
+		} else if (!predicate.equals(other.predicate))
+			return false;
+		return true;
 	}
-	
+
+
 	/** @return Object {@link #argumentState}. */
 	public State getUsedInStateArgument() {
 		return argumentState;

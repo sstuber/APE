@@ -2,12 +2,12 @@ package nl.uu.cs.ape.sat.core.solutionStructure;
 
 import static guru.nidi.graphviz.model.Factory.node;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import guru.nidi.graphviz.attribute.Label;
-import guru.nidi.graphviz.attribute.Shape;
-import guru.nidi.graphviz.attribute.Style;
 import guru.nidi.graphviz.model.Graph;
 import nl.uu.cs.ape.sat.automaton.State;
 import nl.uu.cs.ape.sat.automaton.TypeAutomaton;
@@ -26,10 +26,10 @@ import nl.uu.cs.ape.sat.models.enums.WorkflowElement;
  */
 public class TypeNode extends SolutionWorkflowNode {
 
-	/** DataInstance that define the data instance. The set cannot contain {@code EmptyType}. */
-	private Set<Type> usedTypes;
-	/** Abstract DataInstance that describe the data instance. */
-	private Set<Type> abstractTypes;
+	/** Types that define the data instance. The set cannot contain {@code EmptyType}. */
+	private SortedSet<Type> usedTypes;
+	/** Abstract Types that describe the data instance. */
+	private SortedSet<Type> abstractTypes;
 	/**
 	 * Module/step in the workflow that generates the data instance as input. If
 	 * {@code null} data instance corresponds to the initial workflow input.
@@ -39,7 +39,7 @@ public class TypeNode extends SolutionWorkflowNode {
 	 * Modules/steps in the workflow that use this data instance as input.
 	 * {@code NULL} represents workflow output.
 	 */
-	private Set<ModuleNode> usedByModules;
+	private List<ModuleNode> usedByModules;
 
 	/**
 	 * Creating Workflow Node that corresponds to a type instance in memory.
@@ -48,10 +48,10 @@ public class TypeNode extends SolutionWorkflowNode {
 	 */
 	public TypeNode(State automatonState) throws ExceptionInInitializerError {
 		super(automatonState);
-		this.usedTypes = new HashSet<Type>();
-		this.abstractTypes = new HashSet<Type>();
+		this.usedTypes = new TreeSet<Type>();
+		this.abstractTypes = new TreeSet<Type>();
 		this.createdByModule = null;
-		usedByModules = new HashSet<ModuleNode>();
+		usedByModules = new ArrayList<ModuleNode>();
 		if (automatonState.getWorkflowStateType() != WorkflowElement.MEMORY_TYPE) {
 			throw new ExceptionInInitializerError(
 					"Class MemTypeNode can only be instantiated using State that is of type WorkflowElement.MEMORY_TYPE, as a parameter.");
@@ -86,14 +86,14 @@ public class TypeNode extends SolutionWorkflowNode {
 	}
 
 	/**
-	 * Add a tool, that uses this data instance as input, to the list
+	 * Add a tool, that uses this data instance as input, to the List
 	 * {@link TypeNode#usedByModules}.
 	 * 
 	 * @param usedByTool - tool/module node in the workflow, that uses this data
 	 *                   instance as input
 	 */
 	public void addUsedByTool(ModuleNode usedByTool) {
-		usedByModules.add(usedByTool);
+			usedByModules.add(usedByTool);
 	}
 
 	/** Set the tool/workflow step that creates this data instance. */
@@ -106,7 +106,7 @@ public class TypeNode extends SolutionWorkflowNode {
 	 * 
 	 * @return List of simple/primitive data types that define the instance.
 	 */
-	public Set<Type> getTypes() {
+	public SortedSet<Type> getTypes() {
 		return usedTypes;
 	}
 
@@ -116,7 +116,7 @@ public class TypeNode extends SolutionWorkflowNode {
 	 * 
 	 * @return List of abstract data types that describe the instance.
 	 */
-	public Set<Type> getAbstractTypes() {
+	public SortedSet<Type> getAbstractTypes() {
 		return abstractTypes;
 	}
 
@@ -132,11 +132,11 @@ public class TypeNode extends SolutionWorkflowNode {
 
 	/**
 	 * Get all module nodes that use the data instance in input. If {@code NULL} is
-	 * in the set,
+	 * in the list, the type is used as workflow output.
 	 * 
-	 * @return
+	 * @return List of modules that used the type instance (a {@code NULL} value represent the workflow output).
 	 */
-	public Set<ModuleNode> getUsedByModules() {
+	public List<ModuleNode> getUsedByModules() {
 		return usedByModules;
 	}
 
@@ -147,16 +147,6 @@ public class TypeNode extends SolutionWorkflowNode {
 	 */
 	public boolean isEmpty() {
 		return usedTypes.isEmpty();
-	}
-
-	@Override
-	public int hashCode() {
-		return super.hashCode();
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		return super.equals(obj);
 	}
 
 	/**
@@ -182,7 +172,7 @@ public class TypeNode extends SolutionWorkflowNode {
 	}
 
 	public String getDotDefinition() {
-		return getDotID() + " [label=\"" + getDotLabel() + "\", color=blue];\n";
+		return getNodeID() + " [label=\"" + getNodeLabel() + "\", color=blue];\n";
 	}
 
 	/**
@@ -192,11 +182,11 @@ public class TypeNode extends SolutionWorkflowNode {
 	 * @return {@link Graph} extended with the current {@link TypeNode}
 	 */
 	public Graph addTypeToGraph(Graph workflowGraph) {
-		return workflowGraph = workflowGraph.with(node(getDotID()).with(Label.of(getDotLabel() + "   ")));
+		return workflowGraph = workflowGraph.with(node(getNodeID()).with(Label.of(getNodeLabel() + "   ")));
 	}
 
 	/** Get label of the current workflow node in .dot representation. */
-	public String getDotLabel() {
+	public String getNodeLabel() {
 		StringBuilder printString = new StringBuilder();
 		int i = 0;
 		for (Type type : this.usedTypes) {
@@ -209,8 +199,8 @@ public class TypeNode extends SolutionWorkflowNode {
 	}
 
 	/** Get id of the current workflow node in .dot representation. */
-	public String getDotID() {
-		StringBuilder printString = new StringBuilder("\"");
+	public String getNodeID() {
+		StringBuilder printString = new StringBuilder();
 
 		int i = 0;
 		for (Type type : this.usedTypes) {
@@ -219,8 +209,16 @@ public class TypeNode extends SolutionWorkflowNode {
 				printString = printString.append(",");
 			}
 		}
-		printString = printString.append("_").append(super.getAutomatonState().getPredicateID()).append("\"");
+		printString = printString.append("_").append(super.getAutomatonState().getPredicateID());
 
 		return printString.toString();
+	}
+	
+	/**
+	 * Get a short non descriptive node ID, that can be used as a variable name.
+	 * @return
+	 */
+	public String getShortNodeID() {
+		return "node" + Math.abs(getNodeID().hashCode());
 	}
 }

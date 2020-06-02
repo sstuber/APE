@@ -14,9 +14,12 @@ import org.json.JSONObject;
 
 import nl.uu.cs.ape.sat.APE;
 import nl.uu.cs.ape.sat.constraints.ConstraintTemplate;
+import nl.uu.cs.ape.sat.models.AbstractModule;
 import nl.uu.cs.ape.sat.models.AllModules;
 import nl.uu.cs.ape.sat.models.AllTypes;
 import nl.uu.cs.ape.sat.models.AtomMappings;
+import nl.uu.cs.ape.sat.models.Module;
+import nl.uu.cs.ape.sat.models.enums.NodeType;
 
 public class Test {
 
@@ -25,11 +28,11 @@ public class Test {
 //		runSynthesisSetup();
 
 //		runSynthesisTest();
-//		customParseConfig("/home/vedran/ownCloud/PhD/All Use Cases/Evaluation/gis_workflow_generation/q5_sota_constrained");
+//		customParseConfig("/home/vedran/git/QuAnGIS/WorkflowSynthesis/ToolDescription.json");
 //		APE apeFramework = runSynthesisSetup();
 //		testConstraintTemplates(apeFramework);
 		
-		runJsonConversionTest();
+//		runJsonConversionTest();
 	}
 
 	/**
@@ -80,6 +83,8 @@ public class Test {
 			System.err.println("Error in reading the configuration file.");
 			return null;
 		}
+		
+		apeFramework.getDomainSetup();
 
 //		String d = apeFramework.getTypeElements("Data").toString();
 //		String f = apeFramework.getTypeElements("Format").toString();
@@ -101,7 +106,7 @@ public class Test {
 		System.out.println("Done.");
 	}
 
-	private static void print(AllModules allModules, AllTypes allTypes) {
+	/*private static void print(AllModules allModules, AllTypes allTypes) {
 		System.out.println("-------------------------------------------------------------");
 		System.out.println("\tTool Taxonomy:");
 		System.out.println("-------------------------------------------------------------");
@@ -110,19 +115,22 @@ public class Test {
 		System.out.println("\tData Taxonomy:");
 		System.out.println("-------------------------------------------------------------");
 		allTypes.getRootPredicate().printTree(" ", allTypes);
-	}
+	}*/
 
-	public static void customParseConfig(String path) {
+	public static void customParseConfig(String path) throws IOException {
 		StringBuilder sb = new StringBuilder();
 		try (BufferedReader br = Files.newBufferedReader(
-				Paths.get(path + "/ape.configuration"))) {
+				Paths.get(path))) {
 
 			// read line by line
 			String line;
 			while ((line = br.readLine()) != null) {
 				
-				if(line.contains("DType")) {
-					sb.append(line.replaceFirst("[\"]$", "\"]").replace("\"DType\": \"", "\"DType\": [\"")).append("\n");
+				if(line.contains("\"id\"")) {
+					//sb.append(line.replaceFirst("[\"]$", "\"]").replace("\"DType\": \"", "\"DType\": [\"")).append("\n");
+					sb.append(line).append("\n");
+						sb.append(line.replaceFirst("\"id\": ", "\"label\": ").replace("http://geographicknowledge.de/vocab/GISTools.rdf#", "")).append("\n");
+//					sb.append(line.replaceFirst("\"id\": ", "\"taxonomyOperations\": [").replace("\",", "\"],")).append("\n");
 				} else {
 				sb.append(line).append("\n");
 				}
@@ -133,10 +141,10 @@ public class Test {
 			System.err.format("IOException: %s%n", e);
 		}
 		APEUtils.write2file(sb.toString(),
-				new File(path + "/ape.configuration"), false);
+				new File(path), false);
 	}
 	
-	public static void customParseJson(String path) {
+	public static void customParseJson(String path) throws IOException {
 		StringBuilder sb = new StringBuilder();
 		try (BufferedReader br = Files.newBufferedReader(
 				Paths.get(path + ".json"))) {
@@ -168,7 +176,7 @@ public class Test {
 				new File(path + "New.json"), false);
 	}
 	
-	public static void customAdvancedParseJson(String path) {
+	public static void customAdvancedParseJson(String path) throws IOException {
 		StringBuilder sb = new StringBuilder();
 		try (BufferedReader br = Files.newBufferedReader(
 				Paths.get(path + ".json"))) {

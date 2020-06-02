@@ -1,12 +1,16 @@
 package nl.uu.cs.ape.sat.models;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import nl.uu.cs.ape.sat.automaton.State;
+import nl.uu.cs.ape.sat.models.enums.NodeType;
 import nl.uu.cs.ape.sat.models.enums.WorkflowElement;
 import nl.uu.cs.ape.sat.models.logic.constructs.Atom;
 import nl.uu.cs.ape.sat.models.logic.constructs.PredicateLabel;
+import nl.uu.cs.ape.sat.models.logic.constructs.TaxonomyPredicate;
 
 /**
  *  The {@code AtomMappings} class is used to store the data used for representing the atoms with integer numbers. Atoms are not a separate data structure, 
@@ -19,6 +23,7 @@ public class AtomMappings {
 
 	private Map<Atom, Integer> mappings;
 	private Map<Integer, Atom> reverseMapping;
+	private Map<String, Atom> mapped;
 	/** Number of mapped predicates */
 	private int size;
 	/** Number  of auxiliary introduced variables */
@@ -29,6 +34,7 @@ public class AtomMappings {
 	public AtomMappings() {
 		mappings = new HashMap<Atom, Integer>();
 		reverseMapping = new HashMap<Integer, Atom>();
+		mapped = new HashMap<String, Atom>();
 		/** First {@link #auxMax} variables are reserved for auxiliary variables */
 		size = auxMax + 1;
 		auxiliary = 1;
@@ -46,9 +52,13 @@ public class AtomMappings {
 		
 		Integer id;
 		if ((id = mappings.get(atom)) == null) {
+			if( mapped.get(atom.toString()) != null) {
+				throw new Error("Encoding error. Two or more mappings map the same string: '" + atom.toString() + "'.");
+			}
 			size++;
 			mappings.put(atom, size);
 			reverseMapping.put(size, atom);
+			mapped.put(atom.toString(), atom);
 			return size;
 		}
 		return id;

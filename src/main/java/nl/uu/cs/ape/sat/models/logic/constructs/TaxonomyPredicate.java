@@ -19,7 +19,7 @@ import nl.uu.cs.ape.sat.utils.APEUtils;
  * @author Vedran Kasalica
  *
  */
-public abstract class TaxonomyPredicate implements PredicateLabel, Comparable<TaxonomyPredicate> {
+public abstract class TaxonomyPredicate implements PredicateLabel {
 
 	/**
 	 * Describes the node in from the taxonomy hierarchy. The type can represent a
@@ -31,7 +31,7 @@ public abstract class TaxonomyPredicate implements PredicateLabel, Comparable<Ta
 	 * Root of the Ontology tree that this node belongs to. Used to distinguish
 	 * between mutually exclusive data taxonomy subtrees (type and format).
 	 */
-	private String rootNode;
+	private String rootNodeID;
 
 	/**
 	 * Describes whether the node is relevant in the described scenario. In other
@@ -59,7 +59,7 @@ public abstract class TaxonomyPredicate implements PredicateLabel, Comparable<Ta
 	 * @param nodeType
 	 */
 	public TaxonomyPredicate(String rootNode, NodeType nodeType) {
-		this.rootNode = rootNode;
+		this.rootNodeID = rootNode;
 		this.nodeType = nodeType;
 		this.isRelevant = false;
 		if (!(nodeType == NodeType.LEAF || nodeType == NodeType.EMPTY)) {
@@ -79,7 +79,7 @@ public abstract class TaxonomyPredicate implements PredicateLabel, Comparable<Ta
 	 * @param nodeType
 	 */
 	public TaxonomyPredicate(TaxonomyPredicate oldPredicate, NodeType nodeType) {
-		this.rootNode = oldPredicate.rootNode;
+		this.rootNodeID = oldPredicate.rootNodeID;
 		this.nodeType = nodeType;
 		this.isRelevant = oldPredicate.isRelevant;
 		if (!(nodeType == NodeType.LEAF || nodeType == NodeType.EMPTY)) {
@@ -91,11 +91,58 @@ public abstract class TaxonomyPredicate implements PredicateLabel, Comparable<Ta
 
 	}
 
+	
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
 	@Override
-	public abstract int hashCode();
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((getPredicateID() == null) ? 0 : getPredicateID().hashCode());
+		result = prime * result + ((rootNodeID == null) ? 0 : rootNodeID.hashCode());
+		return result;
+	}
 
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
 	@Override
-	public abstract boolean equals(Object obj);
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		TaxonomyPredicate other = (TaxonomyPredicate) obj;
+		if (getPredicateID() == null) {
+			if (other.getPredicateID() != null)
+				return false;
+		} else if (!getPredicateID().equals(other.getPredicateID())) {
+			return false;
+		}
+		if (rootNodeID == null) {
+			if (other.rootNodeID != null)
+				return false;
+		} else if (!rootNodeID.equals(other.rootNodeID))
+			return false;
+		return true;
+	}
+
+	public int compareTo(PredicateLabel other) {
+		if(!(other instanceof TaxonomyPredicate)) {
+			return this.getPredicateID().compareTo(other.getPredicateID());
+		}
+		TaxonomyPredicate otherPredicate = (TaxonomyPredicate) other;
+		int diff = 0;
+		if((diff = this.getRootNodeID().compareTo(otherPredicate.getRootNodeID())) != 0) {
+			return diff;
+		} else {
+			return this.getPredicateID().compareTo(otherPredicate.getPredicateID());
+		}
+	}
 
 	/**
 	 * Get root of the Ontology tree that this node belongs to. Used to distinguish
@@ -103,15 +150,15 @@ public abstract class TaxonomyPredicate implements PredicateLabel, Comparable<Ta
 	 * 
 	 * @return String ID of the root class.
 	 */
-	public String getRootNode() {
-		return rootNode;
+	public String getRootNodeID() {
+		return rootNodeID;
 	}
 
 	/**
 	 * Set root of the Ontology tree that this node belongs to.
 	 */
 	public void setRootNode(String rootType) {
-		this.rootNode = rootType;
+		this.rootNodeID = rootType;
 	}
 
 	/**
@@ -157,6 +204,8 @@ public abstract class TaxonomyPredicate implements PredicateLabel, Comparable<Ta
 	/**
 	 * Set the current predicate as a relevant part of the taxonomy and all the
 	 * corresponding subClasses and superClasses.
+	 * 
+	 *TODO Should it be topdown??
 	 * 
 	 * @param allPredicates - Map of all the predicates of the given type.
 	 * @return {@code true} if the predicates were successfully set to be relevant.
@@ -338,22 +387,6 @@ public abstract class TaxonomyPredicate implements PredicateLabel, Comparable<Ta
 		}
 	}
 
-//	/**
-//	 * Adds a super-predicate to the current one, if it was not added present
-//	 * already.
-//	 * 
-//	 * @param predicateID - ID of the predicate that will be added as a superclass
-//	 *@return {@code true} if super-predicate was added, false otherwise.
-//	 */
-//	public boolean addSuperPredicate(String predicateID) {
-//		if (nodeType != NodeType.ROOT) {
-//			return superPredicates.add(predicateID);
-//		} else {
-//			System.err.println("Cannot add super-predicate to a root taxonomy term!");
-//			return false;
-//		}
-//	}
-
 	/**
 	 * Returns the list of the predicates that contain the current predicate.
 	 * 
@@ -404,16 +437,6 @@ public abstract class TaxonomyPredicate implements PredicateLabel, Comparable<Ta
 	}
 
 	/**
-	 * Returns true if the type the sub-root type, otherwise returns false - the
-	 * type is not the sub-root node of the taxonomy
-	 * 
-	 * @return true (sub-root node) or false (non-root node)
-	 */
-	public boolean isSubRootPredicate() {
-		return this.nodeType == NodeType.SUBROOT;
-	}
-
-	/**
 	 * Set the type to be a simple type (LEAF type in the Taxonomy).
 	 * 
 	 */
@@ -437,9 +460,5 @@ public abstract class TaxonomyPredicate implements PredicateLabel, Comparable<Ta
 		this.nodeType = nodeType;
 	}
 
-	@Override
-	public int compareTo(TaxonomyPredicate otherPredicate) {
-		return this.getPredicateID().compareTo(otherPredicate.getPredicateID());
-	}
 
 }

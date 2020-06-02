@@ -22,7 +22,7 @@ public class Literal implements Comparable<Literal>{
 	/** Integer value used to encode the atom into cnf form. */
 	private Integer mappedAtom;
 	/** {@code true} if the atom is negated */
-	private boolean negated;
+	private Boolean negated;
 	/** The {@link Atom} class represents elements of the workflow, that can be true or not (depending of the truth value of the literal). */
 	private Atom atom;
 
@@ -125,6 +125,41 @@ public class Literal implements Comparable<Literal>{
 		return atom.getPredicate();
 	}
 	
+	
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = atom.hashCode();
+		result = prime * result + ((negated == null) ? 0 : negated.hashCode());
+		return result;
+	}
+
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Literal other = (Literal) obj;
+		if (negated == null) {
+			if (other.negated != null)
+				return false;
+		} else if (!negated.equals(other.negated))
+			return false;
+		return atom.equals(other.atom);
+	}
+
+
 	/**
 	 *	Compare the two Literals according to the state they are used in. Returns a negative integer, zero, or a positive integer as this Literal's state comes before than, is equal to, or comes after than the @otherLiteral's state.
 	 * 
@@ -134,8 +169,13 @@ public class Literal implements Comparable<Literal>{
 	public int compareTo(Literal otherLiteral) {
 		
 		int thisLiteralState = this.getUsedInStateArgument().getAbsoluteStateNumber();
-		int otherLiteralState = otherLiteral.atom.getUsedInStateArgument().getAbsoluteStateNumber();
-	    return Integer.compare(thisLiteralState, otherLiteralState);
+		int otherLiteralState = otherLiteral.getUsedInStateArgument().getAbsoluteStateNumber();
+	    int diff = 0;
+	    if((diff = Integer.compare(thisLiteralState, otherLiteralState)) != 0) {
+			return diff;
+		} else {
+			return this.getPredicate().compareTo(otherLiteral.getPredicate());
+		}
 	}
 	
 	/**

@@ -2,7 +2,9 @@ package nl.uu.cs.ape.sat.core.solutionStructure;
 
 import static guru.nidi.graphviz.model.Factory.node;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import guru.nidi.graphviz.attribute.Color;
@@ -15,6 +17,7 @@ import nl.uu.cs.ape.sat.automaton.State;
 import nl.uu.cs.ape.sat.models.AbstractModule;
 import nl.uu.cs.ape.sat.models.Module;
 import nl.uu.cs.ape.sat.models.enums.WorkflowElement;
+import nl.uu.cs.ape.sat.utils.APEUtils;
 
 /**
  * The {@code ModuleNode} class is used to represent module step in the actual
@@ -37,9 +40,9 @@ public class ModuleNode extends SolutionWorkflowNode {
 	/** Previous module step in the workflow. */
 	private ModuleNode prevModuleNode;
 	/** List of the data instances that are used as input for the tool. */
-	private Set<TypeNode> inputTypes;
+	private List<TypeNode> inputTypes;
 	/** List of the data instances that are generated as output of the tool. */
-	private Set<TypeNode> outputTypes;
+	private List<TypeNode> outputTypes;
 
 	/**
 	 * Creating Workflow Node that corresponds to a tool usage.
@@ -60,8 +63,8 @@ public class ModuleNode extends SolutionWorkflowNode {
 			throw new ExceptionInInitializerError(
 					"Class ModuleNode can only be instantiated using State that is of type WorkflowElement.MODULE, as a parameter.");
 		}
-		inputTypes = new HashSet<TypeNode>();
-		outputTypes = new HashSet<TypeNode>();
+		inputTypes = new ArrayList<TypeNode>();
+		outputTypes = new ArrayList<TypeNode>();
 	}
 
 	/**
@@ -89,6 +92,12 @@ public class ModuleNode extends SolutionWorkflowNode {
 
 	public void addInputType(TypeNode inputTypeNode) {
 		inputTypes.add(inputTypeNode);
+	}
+	
+	/** Set an input type in a specific input slot. */
+	public void setInputType(int inputIndex, TypeNode memoryTypeNode) {
+		APEUtils.safeSet(this.inputTypes, inputIndex, memoryTypeNode);
+		
 	}
 
 	public void addOutputType(TypeNode outputTypeNode) {
@@ -130,11 +139,11 @@ public class ModuleNode extends SolutionWorkflowNode {
 		return prevModuleNode;
 	}
 
-	public Set<TypeNode> getInputTypes() {
+	public List<TypeNode> getInputTypes() {
 		return inputTypes;
 	}
 
-	public Set<TypeNode> getOutputTypes() {
+	public List<TypeNode> getOutputTypes() {
 		return outputTypes;
 	}
 
@@ -159,7 +168,7 @@ public class ModuleNode extends SolutionWorkflowNode {
 	}
 
 	public String getDotDefinition() {
-		return getDotID() + " [label=\"" + getDotLabel() + "\", shape=box];\n";
+		return getNodeID() + " [label=\"" + getNodeLabel() + "\", shape=box];\n";
 	}
 
 	/**
@@ -170,11 +179,11 @@ public class ModuleNode extends SolutionWorkflowNode {
 	 */
 	public Graph addModuleToGraph(Graph workflowGraph) {
 		return workflowGraph = workflowGraph
-				.with(node(getDotID()).with(Label.of(getDotLabel() + "              "), Shape.polygon(4), Color.BLUE, Style.BOLD));
+				.with(node(getNodeID()).with(Label.of(getNodeLabel() + "              "), Shape.polygon(4), Color.BLUE, Style.BOLD));
 	}
 
-	/** Get id of the current workflow node in .dot representation. */
-	public String getDotID() {
+	/** Get id of the current workflow node. */
+	public String getNodeID() {
 		StringBuilder printString = new StringBuilder();
 		printString = printString.append("\"").append(this.usedModule.getPredicateID());
 		printString = printString.append("_").append(super.getAutomatonState().getPredicateID()).append("\"");
@@ -182,12 +191,9 @@ public class ModuleNode extends SolutionWorkflowNode {
 		return printString.toString();
 	}
 
-	/** Get label of the current workflow node in .dot representation. */
-	public String getDotLabel() {
-		StringBuilder printString = new StringBuilder();
-		printString = printString.append(this.usedModule.getPredicateLabel());
-
-		return printString.toString();
+	/** Get label of the current workflow node. */
+	public String getNodeLabel() {
+		return this.usedModule.getPredicateLabel();
 	}
 
 }

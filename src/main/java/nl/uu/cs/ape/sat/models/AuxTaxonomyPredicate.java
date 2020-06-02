@@ -6,13 +6,16 @@ import java.util.TreeSet;
 import nl.uu.cs.ape.sat.models.enums.LogicOperation;
 import nl.uu.cs.ape.sat.models.enums.NodeType;
 import nl.uu.cs.ape.sat.models.logic.constructs.TaxonomyPredicate;
+import nl.uu.cs.ape.sat.utils.APEDomainSetup;
 
 /**
- * The {@code TaxonomyPredicateHelper} class represents an abstract class used
+ * The {@code AuxTaxonomyPredicate} class represents an abstract class used
  * strictly to represent artificially generated abstract terms, used to abstract
  * over existing taxonomy terms.<br>
  * Object of this class represent disjunctions of conjunctions of existing
  * taxonomy predicates.
+ * 
+ * Class is meant to be used only by the {@link APEDomainSetup#generateAuxiliaryPredicate(SortedSet, LogicOperation)}.
  * 
  * @author Vedran Kasalica
  *
@@ -27,27 +30,21 @@ public class AuxTaxonomyPredicate extends TaxonomyPredicate {
 	/** Field defines the connective between the subclasses of the predicate. */
 	private final LogicOperation logicOp;
 
+
 	/**
-	 * Creates an abstract module from @predicateName and @predicateID. If @isTool
-	 * is true, module is an actual tool, otherwise it's an abstract/non-tool
-	 * module.
-	 * 
-	 * @param predicateName - module name
-	 * @param predicateID   - unique module identifier
-	 * @param rootNode      - ID of the Taxonomy Root node corresponding to the
-	 *                      Module.
-	 * @param nodeType      - {@link NodeType} object describing the type w.r.t. the
-	 *                      Module Taxonomy.
+	 * Create an auxiliary predicate.
+	 * @param predicate
+	 * @param logicOp
 	 */
 	public AuxTaxonomyPredicate(TaxonomyPredicate predicate, LogicOperation logicOp) {
-		super(predicate.getRootNode(), predicate.getNodeType());
+		super(predicate.getRootNodeID(), predicate.getNodeType());
 		this.taxonomyPredicate = predicate;
 		this.logicOp = logicOp;
 		this.containingPredicates = new TreeSet<TaxonomyPredicate>();
 	}
 
 
-	public TaxonomyPredicate getTaxonomyPredicate() {
+	public TaxonomyPredicate getTaxonomyPredicates() {
 		return taxonomyPredicate;
 	}
 
@@ -88,20 +85,43 @@ public class AuxTaxonomyPredicate extends TaxonomyPredicate {
 
 
 	/* (non-Javadoc)
-	 * @see nl.uu.cs.ape.sat.models.logic.constructs.TaxonomyPredicate#hashCode()
+	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
 	public int hashCode() {
-		return taxonomyPredicate.hashCode();
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((containingPredicates == null) ? 0 : containingPredicates.hashCode());
+		result = prime * result + ((logicOp == null) ? 0 : logicOp.hashCode());
+		result = prime * result + ((taxonomyPredicate == null) ? 0 : taxonomyPredicate.hashCode());
+		return result;
 	}
 
-
 	/* (non-Javadoc)
-	 * @see nl.uu.cs.ape.sat.models.logic.constructs.TaxonomyPredicate#equals(java.lang.Object)
+	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
 	public boolean equals(Object obj) {
-		return taxonomyPredicate.equals(obj);
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		AuxTaxonomyPredicate other = (AuxTaxonomyPredicate) obj;
+		if (containingPredicates == null) {
+			if (other.containingPredicates != null)
+				return false;
+		} else if (!containingPredicates.equals(other.containingPredicates))
+			return false;
+		if (logicOp != other.logicOp)
+			return false;
+		if (taxonomyPredicate == null) {
+			if (other.taxonomyPredicate != null)
+				return false;
+		} else if (!taxonomyPredicate.equals(other.taxonomyPredicate))
+			return false;
+		return true;
 	}
 
 

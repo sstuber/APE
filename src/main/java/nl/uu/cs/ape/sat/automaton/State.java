@@ -2,6 +2,7 @@ package nl.uu.cs.ape.sat.automaton;
 
 import nl.uu.cs.ape.sat.models.enums.WorkflowElement;
 import nl.uu.cs.ape.sat.models.logic.constructs.PredicateLabel;
+import nl.uu.cs.ape.sat.models.logic.constructs.TaxonomyPredicate;
 
 /***
  * The {@code State} class is used to represent the states in module and type automatons. Automaton corresponds to the structure of the possible solutions of the synthesis, i.e. it represents the structure that the provided solutions will follow.
@@ -36,12 +37,22 @@ public class State implements PredicateLabel {
 	}
 
 
+	/* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
 	@Override
 	public int hashCode() {
-		return stateName.hashCode() + absoluteStateNumber;
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + absoluteStateNumber;
+		result = prime * result + ((stateName == null) ? 0 : stateName.hashCode());
+		return result;
 	}
 
 
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -51,7 +62,33 @@ public class State implements PredicateLabel {
 		if (getClass() != obj.getClass())
 			return false;
 		State other = (State) obj;
-		return this.stateName.equals(other.getPredicateID()) && (absoluteStateNumber == other.absoluteStateNumber);
+		if (absoluteStateNumber != other.absoluteStateNumber)
+			return false;
+		if (stateName == null) {
+			if (other.stateName != null)
+				return false;
+		} else if (!stateName.equals(other.stateName))
+			return false;
+		return true;
+	}
+
+
+	/** 
+	 * Compares the two States based on their order in the solution. 
+	 * @return a negative integer, zero, or a positive integer as this object is before than, equal to, or after than the specified State.
+	 */
+	@Override
+	public int compareTo(PredicateLabel other) {
+		if(!(other instanceof State)) {
+			return this.getPredicateID().compareTo(other.getPredicateID());
+		}
+		State otherState = (State) other;
+		int diff = 0;
+		if((diff = Integer.compare(this.absoluteStateNumber, otherState.absoluteStateNumber)) != 0) {
+			return diff;
+		} else {
+			return this.getPredicateID().compareTo(otherState.getPredicateID());
+		}
 	}
 
 
@@ -60,6 +97,14 @@ public class State implements PredicateLabel {
 	 * @return String representation of the state.
 	 */
 	public String getPredicateID() {
+		return stateName;
+	}
+	
+	/**
+	 * Returns the text representing the state (e.g. M04 or T02.31)
+	 * @return String representation of the state.
+	 */
+	public String getPredicateLabel() {
 		return stateName;
 	}
 
@@ -113,7 +158,6 @@ public class State implements PredicateLabel {
 		
 		return absOrderNumber;
 	}
-
 
 
 	
